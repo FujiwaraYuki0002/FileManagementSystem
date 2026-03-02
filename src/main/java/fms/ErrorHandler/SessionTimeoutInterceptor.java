@@ -69,7 +69,7 @@ public class SessionTimeoutInterceptor implements HandlerInterceptor {
 
             // ログイン画面にリダイレクト
             //本番
-            response.sendRedirect("/file_management_system/");
+            //response.sendRedirect("/file_management_system/");
             //ローカル
             response.sendRedirect("/");
 
