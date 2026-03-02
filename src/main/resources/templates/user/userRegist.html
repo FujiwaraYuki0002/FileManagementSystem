@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+
+<title th:text="${update != null ? 'ユーザー更新' : 'ユーザー登録'}"></title>
+
+<body>
+    <!--メイン-->
+    <form data-validate th:action="@{${update != null ? '/user/update' : '/user/insert' }}" method="post"
+        onsubmit="return submitForm(event)" th:data-action="${update != null ? 'update' : 'insert'}"
+        th:object="${userForm}">
+        <div class="container">
+            <div class="non_compelete-message"></div>
+
+            <div class="title">
+                <h1 th:text="${update != null ? 'ユーザー更新' : 'ユーザー登録' }"></h1>
+            </div>
+
+            <div class="center">
+                <div class="colmun">
+                    <div class="content_left">
+                        <div class="colmun_common">
+                            <div class="left_label">
+                                <label>ユーザーID</label>
+                                <label>ユーザー名</label>
+                                <label>ユーザー名(カナ)</label>
+                                <label>パスワード</label>
+                                <label>確認用パスワード</label>
+                            </div>
+                            <div class="right_textbox">
+                                <input type="text" th:class="${update != null ? 'textbox check' : 'textbox clear'}"
+                                    size="40" placeholder="半角英数字を含む8文字～20文字" id="input1" name="userId"
+                                    th:value="*{userId}" required validate[required]
+                                    th:disabled="${update != null || (exclusiveControl != null && exclusiveControl)}"
+                                    th:classappend="${#fields.hasErrors('userId') ? 'errorTextbox' : ''}">
+                                <input type="hidden" name="userId" th:value="*{userId}" th:if="${update != null}">
+                                <input type="text"
+                                    th:class="${update != null ? 'textbox check clear' : 'textbox clear'}" size="40"
+                                    placeholder="全角文字で100文字以内" id="input2" name="userName" th:value="*{userName}"
+                                    required validate[required]
+                                    th:classappend="${#fields.hasErrors('userName') ? 'errorTextbox' : ''}"
+                                    th:disabled="${exclusiveControl != null && exclusiveControl}">
+                                <input type="text"
+                                    th:class="${update != null ? 'textbox check clear' : 'textbox clear'}" size="40"
+                                    placeholder="全角カタカナ文字で100文字以内" id="input3" name="userNameKana"
+                                    th:value="*{userNameKana}" required validate[required]
+                                    th:classappend="${#fields.hasErrors('userNameKana') ? 'errorTextbox' : ''}"
+                                    th:disabled="${exclusiveControl != null && exclusiveControl}">
+                                <input type="password"
+                                    th:class="${update != null ? 'textbox check clear' : 'textbox clear'}" size="40"
+                                    id="newPassword" name="newPassword" th:value="*{newPassword}"
+                                    th:classappend="${#fields.hasErrors('newPassword') ? 'errorTextbox' : ''}"
+                                    th:disabled="${exclusiveControl != null && exclusiveControl}"
+                                    th:placeholder="${update != null ? '変更しない場合入力しないでください' : ''}">
+                                <input type="password"
+                                    th:class="${update != null ? 'textbox check clear' : 'textbox clear'}" size="40"
+                                    id="checkPassword" name="checkPassword" th:value="*{checkPassword}"
+                                    th:classappend="${#fields.hasErrors('checkPassword') ? 'errorTextbox' : ''}"
+                                    th:disabled="${exclusiveControl != null && exclusiveControl}"
+                                    th:placeholder="${update != null ? '変更しない場合入力しないでください' : ''}">
+                                <span class="attention">*パスワードは英文字(大文字、小文字)、数字、記号を全て含む10文字～20文字にしてください。
+                                </span>
+                                <span class="tooltip tooltip-clear">
+                                    <span class="tooltip-text">入力された値を全削除します。</span>
+                                    <input type="button" value="クリア" class="white colmun_button button"
+                                        onclick="clearForm()">
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content_right">
+                        <div class="colmun_common">
+                            <div class="left_label">
+                                <label>所属</label>
+                                <br><br><br>
+                                <label>役職</label>
+                                <br><br><br>
+                                <label>権限</label>
+                                <label th:if="${update != null}">ステータス</label>
+                            </div>
+                            <div class="right_textbox">
+                                <div class="Form_layout">
+                                    <div class="ScrollBox" id="input1">
+                                        <label class="input_label checkList" th:each="team,stat : ${mTeamList}">
+                                            <input type="checkbox" th:value="${team.teamId}" name="teamId" class="clear"
+                                                th:id="'team'+${stat.count}"
+                                                th:checked="${selectedTeamIds != null && selectedTeamIds.contains(team.teamId)}"
+                                                th:disabled="${exclusiveControl != null && exclusiveControl}">
+                                            <span th:text="${team.teamName}"></span><br>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="Form_layout">
+                                    <div class="ScrollBox">
+                                        <label class="input_label" th:each="post,stat : ${mPostList}">
+                                            <input type="radio" th:value="${post.postId}" name="postId" class="clear"
+                                                th:id="'post'+${stat.count}"
+                                                th:checked="${post.postId == userForm.postId}"
+                                                th:text="${post.postName}"
+                                                th:disabled="${exclusiveControl != null && exclusiveControl}"><br>
+                                        </label>
+                                    </div>
+                                </div>
+                                <select name="role" style="vertical-align: top;"
+                                    th:disabled="${exclusiveControl != null && exclusiveControl}">
+                                    <option value="1" th:selected="*{role == 1}">管理者
+                                    </option>
+                                    <option value="2" th:selected="*{role != 1}">一般
+                                    </option>
+                                </select>
+                                <select th:if="${update != null}" name="retirementFlg" style="vertical-align: top;"
+                                    th:disabled="${exclusiveControl != null && exclusiveControl}">
+                                    <option value="0" th:selected="*{retirementFlg == 0}">
+                                        現職者</option>
+                                    <option value="1" th:selected="*{retirementFlg != 0}">
+                                        退職者</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="overlay"></div>
+
+        <!-- エラーダイアログ -->
+        <div id="errorAlert" th:object="${userForm}">
+            <!-- userIdのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('userId')}">
+                <span th:errors="*{userId}" class="errorMessage"></span>
+            </div>
+
+            <!-- userNameのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('userName')}">
+                <span th:errors="*{userName}" class="errorMessage"></span>
+            </div>
+
+            <!-- userNameKanaのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('userNameKana')}">
+                <span th:errors="*{userNameKana}" class="errorMessage"></span>
+            </div>
+
+            <!-- newPasswordのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('newPassword')}">
+                <span th:errors="*{newPassword}" class="errorMessage"></span>
+            </div>
+
+            <!-- checkPasswordのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('checkPassword')}">
+                <span th:errors="*{checkPassword}" class="errorMessage"></span>
+            </div>
+            <div th:each="error:${#fields.detailedErrors()}" th:if="${exclusiveControl}">
+                <span th:text="${error.message}" class="errorMessage"></span>
+            </div>
+            <button type="button" id="okButton" onclick="closeAlert('input1')">OK</button>
+        </div>
+
+        <!--フッター-->
+        <footer>
+            <div class="right">
+                <div class="display-inline">
+                    <input type="submit" th:value="${update != null ? '更新' : '登録'}"
+                        th:name="${update != null ? 'updateButton' : 'insertButton'}" class="button" disabled>
+                </div>
+            </div>
+    </form>
+    <div class="left" th:if="${insert != null}">
+        <form th:action="@{/user/insertBack}" method="post">
+            <input type="submit" value="戻る" class="button">
+        </form>
+
+    </div>
+    <div class="left" th:if="${update != null}">
+        <form th:action="@{/user/updateBack}" method="post">
+            <input type="submit" value="戻る" class="button">
+        </form>
+    </div>
+    </footer>
+
+    <script>
+        function clearForm() {
+            // テキストフィールドの値を空にする
+            $('.clear ').val('');
+
+            // チェックボックスを未選択にする
+            $('[type="checkbox"]').prop('checked', false);
+
+            // ラジオボタンを未選択にする
+            $('[type="radio"]').prop('checked', false);
+
+            // セレクトボックスの選択をリセットする
+            $('select').prop('selectedIndex', 0); // デフォルトの選択をリセット
+        }
+
+
+        // 確認用ダイアログ表示
+        function submitForm(event) {
+            const form = event.target;
+            const action = form.getAttribute('data-action');
+
+            if (action === 'update') {
+                return updatecheck();  // updatecheck() を呼び出す
+            } else {
+                return insertcheck();  // insertcheck() を呼び出す
+            }
+        }
+
+        // ページ読み込み時に初期化
+        $(document).ready(function () {
+            // 登録画面または更新画面かを判定
+            const isInsertPage = $("form").attr("action").includes("insert");
+            const isUpdatePage = $("form").attr("action").includes("update");
+
+            // 登録画面の場合にのみ初期化
+            if (isInsertPage) {
+                // フォームの入力値が変更されるたびにチェックを実行
+                $("form").on("input change", userInsertCheck);
+                userInsertCheck(); // 初期状態でも確認を行う
+            }
+
+            // 更新画面の場合にのみ初期化
+            if (isUpdatePage) {
+                // フォームの入力値が変更されるたびにチェックを実行
+                $("form").on("input change", valueChangeCheck);
+                valueChangeCheck(); // 初期状態でも確認を行う
+            }
+        });
+
+
+        // 登録ボタン活性・非活性
+        jQuery(function ($) {
+            if ($('.errorMessage').length > 0) {
+                errorAlert();
+            }
+        });
+
+        // ユーザー登録画面
+        function userInsertCheck() {
+            let allFieldsFilled = true; // 全ての項目が入力されているかチェックするフラグ
+
+            // 必須フィールドのチェック（パスワードと確認用パスワードの一致チェックは削除）
+            const requiredFields = [
+                'userId', // ユーザーID
+                'userName', // ユーザー名
+                'userNameKana', // ユーザー名(カナ)
+                'newPassword', // パスワード
+                'checkPassword' // 確認用パスワード
+            ];
+
+            // 必須フィールドが空でないかチェック
+            requiredFields.forEach(field => {
+                if ($(`[name='${field}']`).val().trim() === '') {
+                    allFieldsFilled = false;
+                }
+            });
+
+            // 所属、役職、権限、ステータスもチェック（選択されているか）
+            const teamSelected = $('[name="teamId"]:checked').length > 0;
+            const postSelected = $('[name="postId"]:checked').length > 0;
+            const roleSelected = $('[name="role"]').val() !== '';
+            const statusSelected = $('[name="retirementFlg"]').val() !== '';
+
+            // すべての必須フィールドと選択項目が埋められていればボタンを活性化
+            if (allFieldsFilled && teamSelected && postSelected && roleSelected && statusSelected) {
+                $("input[name='insertButton']").prop('disabled', false); // 登録ボタンを活性化
+            } else {
+                $("input[name='insertButton']").prop('disabled', true); // 登録ボタンを無効化
+            }
+        }
+
+        // フォーム内の全要素を取得
+        const formElements = $('input, select, textarea');
+        // 各要素の初期値を保存するマップ
+        const initialValues = new Map();
+
+        // 各要素の初期値を記録
+        formElements.each(function () {
+            const el = $(this)[0]; // jQueryオブジェクトからDOM要素を取得
+
+            // チェックボックス、ラジオボタン、セレクトボックスの初期値を保存
+            if (el.type === "checkbox" || el.type === "radio") {
+                // チェックボックスやラジオボタンの状態を初期値として保存
+                initialValues.set(el, el.checked);
+            } else if (el.tagName === "SELECT") {
+                // セレクトボックスの初期値を保存
+                initialValues.set(el, el.value);
+            } else {
+                // 他の要素の初期値（テキストボックスなど）を保存
+                initialValues.set(el, el.value);
+            }
+        });
+
+        // ユーザー登録画面
+        function valueChangeCheck() {
+
+
+            // 入力値が初期値と異なるか監視
+            formElements.on("input change", checkChanges);
+
+            // 入力状況の変更確認
+            function checkChanges() {
+                let hasChanged = false;
+                let allFieldsFilled = true; // 全ての項目が入力されているかチェックするフラグ
+                const teamSelected = $('[name="teamId"]:checked').length > 0;
+                // 変更を検知
+                initialValues.forEach((initialValue, element) => {
+                    const $el = $(element); // jQueryオブジェクトに変換
+
+                    // パスワードと確認用パスワードのフィールドを除外
+                    if (element.name === "newPassword" || element.name === "checkPassword") {
+                        return;
+                    }
+
+                    if (element.type === "checkbox" || element.type === "radio" || element.tagName === "SELECT") {
+                        // チェックボックス、ラジオボタン、セレクトボックスの変更を検知
+                        if (element.type === "checkbox" || element.type === "radio") {
+                            // チェックボックスやラジオボタンの状態が初期値と異なるかチェック
+                            if (element.checked !== initialValue) {
+                                hasChanged = true;
+                            }
+                        } else if (element.tagName === "SELECT") {
+                            // セレクトボックスの選択された値が初期値と異なるかチェック
+                            if (element.value !== initialValue) {
+                                hasChanged = true;
+                            }
+                        }
+                    } else {
+                        // テキストボックスやテキストエリアの変更を検知
+                        if ($el.val() !== initialValue) {
+                            hasChanged = true;
+                        }
+
+                        // 入力フィールドが空かチェック
+                        if ($el.val().trim() === '') {
+                            allFieldsFilled = false;
+                        }
+                    }
+                });
+
+                // パスワードと確認用パスワードが両方とも入力されている場合は、変更がなくてもボタンを活性化
+                const passwordFilled = $('[name="newPassword"]').val().trim() !== '' && $('[name="checkPassword"]').val().trim() !== '';
+
+                const passwordMissingFilled = $('[name="newPassword"]').val().trim() == '' && $('[name="checkPassword"]').val().trim() == '';
+
+                // 変更があった場合、かつ全ての項目が入力されていれば更新ボタンを活性化
+
+                // または、パスワードと確認用パスワードが両方入力されていれば、他のフィールドに変更がなくてもボタンを活性化
+
+                if (allFieldsFilled && teamSelected && ((hasChanged && passwordMissingFilled) || (passwordFilled))) {
+                    $("input[name='updateButton']").prop('disabled', false); // 更新ボタンを活性化
+                } else {
+                    $("input[name='updateButton']").prop('disabled', true); // 更新ボタンを無効化
+                }
+            }
+        }
+    </script>
+
+</body>
+
+</html>

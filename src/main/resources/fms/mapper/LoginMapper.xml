@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- @author 髙橋 真澄 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fms.mapper.LoginMapper">
+
+    <resultMap id="login" type="fms.entity.MUser">
+        <result column="user_id" property="userId" />
+        <result column="user_name" property="userName" />
+         <result column="password" property="password" />
+        <result column="role" property="role" />
+    </resultMap>
+
+    <select id="getLoginInformation" resultMap="login">
+        SELECT user_id,
+               user_name,
+               password,
+               role
+        FROM m_user
+        WHERE user_id = #{userId}
+            AND retirement_Flg = #{retirementFlg}
+    </select>
+
+</mapper>

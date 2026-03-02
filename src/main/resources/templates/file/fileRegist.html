@@ -1,0 +1,755 @@
+<!--/* @author 髙橋 真澄  */-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+
+    <title th:if="${insert != null}">ファイル登録</title>
+    <title th:if="${update != null}">ファイル更新</title>
+
+<body>
+    <!--メイン-->
+    <form data-validate
+          th:action      = "@{${insert != null ? '/file/insert' : '/file/update'}}"
+          th:data-action = "${insert != null ? 'insert' : 'update'}"
+          onsubmit       = "return submitForm(event)"
+          method         = "post"
+          enctype        = "multipart/form-data"
+          th:object      = "${fileInputForm}">
+        <div class = "container">
+            <!--完了メッセージ-->
+            <th:if>
+                <div class="non_compelete-message"></div>
+            </th:if>
+
+            <div class="title">
+                <h1 th:if="${insert != null}">ファイル登録</h1>
+                <h1 th:if="${update != null}">ファイル更新</h1>
+            </div>
+            <div class="center">
+                <div class="colmun">
+                    <div class="content_left">
+                        <div class="colmun_common">
+                            <div class="left_label">
+                                <label>題名</label>
+                                <label>日付</label>
+                                <br>
+                                <label>参加者</label>
+                            </div>
+                            <div class="right_textbox">
+                                <input type        = "text"
+                                    class          = "textbox check"
+                                    name           = "title"
+                                    size           = "40"
+                                    placeholder    = "全角文字100文字以内で入力してください"
+                                    id             = "title"
+                                    th:value       = "${fileInputForm.title}"
+                                    required validate[required]
+                                    th:disabled="${exclusiveControl != null && exclusiveControl}"
+                                    th:classappend = "${#fields.hasErrors('title') ? 'errorTextbox' : ''}">
+                                <input type        = "date"
+                                    id             = "inputDate"
+                                    class          = "check"
+                                    name           = "meetingDate"
+                                    th:value       = "${fileInputForm.meetingDate != null && fileInputForm.meetingDate != '' ?
+                                        T(java.time.LocalDate).parse(fileInputForm.meetingDate,T(java.time.format.DateTimeFormatter).
+                                        ofPattern('yyyyMMdd')).format(T(java.time.format.DateTimeFormatter).ofPattern('yyyy-MM-dd')) : ''}"
+                                    required validate[required]
+                                    th:disabled="${exclusiveControl != null && exclusiveControl}"
+                                    th:classappend = "${#fields.hasErrors('meetingDate') ? 'errorTextbox' : ''}">
+                                <input type="button"
+                                    value="参加者を選択"
+                                    class="button"
+                                    id="showButton"
+                                    th:disabled="${exclusiveControl != null && exclusiveControl}">
+                                <!--/* 選択者リスト */-->
+                                <div class="external_selected_container">
+                                    <div class="external_selected_list">
+                                        <ul id="externalSelectedList">
+                                                <li th:if="${fileInputForm.userName != null && fileInputForm.userName != ''}"
+                                                    th:each="user,st: ${fileInputForm.userName}"
+                                                    th:id="${fileInputForm.userId[st.index]}"
+                                                    th:text="${user}">
+                                                </li>
+                                            <!--/* 選択者リストはクリック時に動的に変更されます */-->
+                                        </ul>
+                                    </div>
+                                </div>
+                                <br>
+                                <!--/* モーダルのコンテンツ */-->
+                                <div id="myModal" class="modal">
+                                    <div class="modal_content">
+                                        <div class="list_container">
+                                            <!-- ボタンコンテナ */-->
+                                            <div class="button_container">
+                                                <!--/* 参加者リストAとリストBの切り替えボタン */-->
+                                                <button class = "toggle_button"
+                                                        id    = "toggleTeamList"
+                                                        disabled>所属</button>
+                                                <!--/* 初期状態でリストAボタンを非活性 */-->
+                                                <button class = "toggle_button"
+                                                        id    = "togglePostList">役職</button>
+                                            </div>
+                                            <!--/* 参加者リストA */-->
+                                            <div id="teamList"
+                                                class="participant_list active">
+                                                <h3>所属リスト</h3>
+                                                <ul>
+                                                    <li th:each = "team : ${teamList}"
+                                                        th:id   = "team+${team.teamId}"
+                                                        th:text = "${team.teamName}">
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            <!--/* リストB */-->
+                                            <div id="postList"
+                                                class="participant_list">
+                                                <h3>役職リスト</h3>
+                                                <ul>
+                                                    <li th:each="post : ${postList}"
+                                                        th:id="post+${post.postId}"
+                                                        th:text="${post.postName}">
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <div id="detail_container"
+                                            class="detail_container">
+                                            <div class="detail_list">
+                                                <ul id="detailList"
+                                                    class="participant_detail_list">
+                                                    <!--/* 詳細リストはクリック時に動的に変更される */-->
+                                                </ul>
+                                            </div>
+
+                                            <div class="selected_container">
+                                                <h3>選択者リスト</h3>
+                                                <div class="selected_list">
+                                                    <ul id="selectedList">
+                                                        <!--/* 選択者リストはクリック時に動的に変更される */-->
+                                                    </ul>
+                                                </div>
+                                                <input type="button" value="完了"
+                                                    class="complete_button"
+                                                    id="closeButton">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--ここまでがモーダルウィンドウ関連-->
+
+                                    <button type = "button"
+                                            class    = "white colmun_button button clear tooltip tooltip-clear"
+                                            onclick  = clearForm()
+                                            th:disabled="${exclusiveControl != null && exclusiveControl}">
+                                            <span class="tooltip-text">入力された値を全削除します。</span>クリア</button>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content_right" th:if="${insert != null}">
+                        <div class="colmun_common">
+                            <div class="left_label">
+                                <label >ファイル1</label>
+                                <br><br>
+                                <label>ファイル2</label>
+                                <br><br>
+                                <label>ファイル3</label>
+                            </div>
+                            <div class="right_textbox">
+                                <span class="file_select">
+                                        <label class = "file_label">
+                                            <input type = "file"
+                                                   name = "file"
+                                                   id   = "file1"
+                                                   accept = ".mp3,.txt,.docx,.xlsx"
+                                                   class  = "eitherCheck">ファイルを選択
+                                        </label>
+                                        <input type  = "button"
+                                               class = "minus"
+                                               id    = "delete_file1"
+                                               value = "－"><br>
+                                    <a id = "file_name1">選択されていません</a>
+                                </span>
+                                <span class = "file_select">
+                                        <label class = "file_label">
+                                            <input type   = "file"
+                                                   name   = "file"
+                                                   id     = "file2"
+                                                   accept = ".mp3,.txt,.docx,.xlsx"
+                                                   class  = "eitherCheck">ファイルを選択
+                                        </label>
+                                        <input type  = "button"
+                                               class = "minus"
+                                               id    = "delete_file2"
+                                               value = "－"><br>
+                                    <a id="file_name2">選択されていません</a>
+                                </span>
+                                <span class="file_select">
+                                        <label class="file_label">
+                                            <input type   = "file"
+                                                   name   = "file"
+                                                   id     = "file3"
+                                                   accept = ".mp3,.txt,.docx,.xlsx"
+                                                   class  = "eitherCheck">ファイルを選択
+                                        </label>
+                                        <input type  = "button"
+                                               class = "minus"
+                                               id    ="delete_file3"
+                                               value = "－"><br>
+                                    <a id="file_name3">選択されていません</a>
+                                </span>
+                                <span class="file_select insert_text attention">
+                                    ※アップロード可能なファイルは合計100MB以下です
+                                    .mp3のファイルは1つのみ登録可能です
+                                    ファイル名は100文字以内にしてください
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content_right" th:if="${update != null}">
+                        <div class="colmun_common">
+                            <div class="left_label">
+                                <label
+                                    th:each = "fileItem,status : ${file.tFileList}"
+                                    th:text = "'ファイル' + ${status.count}"></label>
+                            </div>
+                            <div class="right_textbox">
+                                <div class="flexbox" th:each="fileItem, status : ${file.tFileList}">
+                                    <!-- ファイル名の入力欄 -->
+                                    <input type        = "text"
+                                        size           = 30px
+                                        class          = "textbox check"
+                                        name           = "noExtensionFileName"
+                                        th:id          = "'file' + ${status.count}"
+                                        th:value       = "${fileItem.fileName.substring(0, fileItem.fileName.lastIndexOf('.'))}"
+                                        required validate[required]
+                                        placeholder    ="100文字以内で入力してください"
+                                        th:disabled="${exclusiveControl != null && exclusiveControl}"
+                                        th:classappend = "${#fields.hasErrors('fileName') ? 'errorTextbox' : ''}">
+
+                                    <!-- 拡張子を表示 -->
+                                    <span name = "fileExtension"
+                                          th:text="${fileItem.fileName.substring(fileItem.fileName.lastIndexOf('.') + 1)}">
+                                     </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- オーバーレイ -->
+        <div id="overlay"></div>
+
+        <!-- エラーダイアログ -->
+        <div id="errorAlert" th:object="${fileInputForm}">
+
+            <!-- titleのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('title')}">
+                <span th:errors="*{title}" class="errorMessage"></span>
+            </div>
+
+            <!-- meetingDateのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('meetingDate')}">
+                <span th:errors="*{meetingDate}" class="errorMessage"></span>
+            </div>
+
+            <!-- fileのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('file')}">
+                <span th:errors="*{file}" class="errorMessage"></span>
+            </div>
+
+            <!-- fileNameのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('fileName')}">
+                <span th:errors="*{fileName}" class="errorMessage"></span>
+            </div>
+
+            <!-- 排他ロックのエラーメッセージ -->
+            <div th:each="error:${#fields.detailedErrors()}" th:if="${exclusiveControl}">
+                <span th:text="${error.message}" class="errorMessage"></span>
+            </div>
+            <button type="button" id="okButton" onclick="closeAlert('input1')">OK</button>
+        </div>
+
+        <div id="loadOverlay"></div>
+
+        <div id = "loadAlert">
+            <div id="loadingMessage">読み込み中です
+                <span id="dots">・・・</span>
+            </div>
+        </div>
+
+        <!--フッター-->
+        <footer>
+            <div class="right" th:if="${insert != null}">
+                <div class="display-inline">
+                    <input type  = "hidden"
+                           name  = "userId"
+                           id    = "selectedId">
+                    <input type  = "hidden"
+                           name  = "userName"
+                           id    = "selectedName">
+                    <input type  = "hidden"
+                           name  = "fileName"
+                           id    = "fileName1">
+                    <input type  = "hidden"
+                           name  = "fileName"
+                           id    = "fileName2">
+                    <input type  = "hidden"
+                           name  = "fileName"
+                           id    = "fileName3">
+                    <input type  = "submit"
+                           value = "登録"
+                           class = "button"
+                           name  = "insertButton"
+                           disabled>
+                </div>
+            </div>
+            <div class = "right" th:if="${update != null}">
+                <div class = "display-inline">
+                    <input type  = "hidden"
+                           name  = "fileId"
+                           th:value = "${file.fileId}">
+                    <input type  = "hidden"
+                           name  = "userId"
+                           id    = "selectedId">
+                    <input type  = "hidden"
+                           name  = "userName"
+                           id    = "selectedName">
+                    <input type  = "hidden"
+                           name  = "version"
+                           th:value = "${file.version}">
+                    <input type  = "hidden"
+                           name  = "fileName[]">
+                    <input type  = "submit"
+                           value = "更新"
+                           name  = "updateButton"
+                           class = "button"
+                           disabled>
+                </div>
+            </div>
+    </form>
+
+        <div class="left">
+            <form th:action="@{/file/insertBack}" th:if="${insert != null}" method="post">
+                <input type  = "submit"
+                       value = "戻る"
+                       class = "button">
+            </form>
+            <form th:action="@{/file/updateBack}" th:if="${update != null}" method="post">
+                <input type="submit"
+                       value="戻る"
+                       class="button">
+            </form>
+        </div>
+    </footer>
+
+    <script th:inline="javascript">
+
+        // Springで渡されたpostListをJSONとして変換してJavaScriptに埋め込む
+        const userList = /*[[${userList}]]*/"userList";
+        const teamContentsList = /*[[${teamList}]]*/"teamList";
+        const postContentsList = /*[[${postList}]]*/"postList";
+
+        // 登録済みのファイル名を取得
+        const fileNameList = /*[[${fileNameList}]]*/ "fileNameList";
+
+        const update = /*[[${update}]]*/null;
+        const insert = /*[[${insert}]]*/null;
+
+        // 各リストの中身
+        var details = {};
+        // モーダルウィンドウ外にあるリストに追加する名前
+        var externalDetails = {};
+        //これを<li>のidに付与して受け渡す
+        var detailIds = {}
+
+        // モーダルを開く
+        $('#showButton').on('click', function () {
+            modalOpen();
+        });
+
+        // 完了ボタンをクリックでモーダルを閉じる
+        $('#closeButton').on('click', function () {
+            modalClose();
+        });
+
+        // リスト1を表示する処理
+        $('#toggleTeamList').on('click', function () {
+            teamOpen();
+        });
+
+        // リスト2を表示する処理
+        $('#togglePostList').on('click', function () {
+            postOpen();
+        });
+
+        // let dotCount = 0;
+        // let loadingInterval;
+
+        function showLoading() {
+            // ボタンをクリックしたときに「読み込み中」のメッセージを表示
+            $("#loadingMessage").show();
+            $("#loadAlert").show();
+            $("#loadOverlay").show();
+            let dotCount = 0;
+
+            // 「.」の部分を変化させる
+            const loadingInterval = setInterval(() => {
+                const dots = $("#dots");
+                // 0, 1, 2, 3でループ
+                dotCount = (dotCount + 1) % 4;
+                // 500ミリ秒ごとに'.'、'..'、'...'に変化
+                dots.text('・'.repeat(dotCount));
+            }, 500);
+        }
+
+        // 確認用ダイアログ表示
+        function submitForm(event) {
+            const $form = $(event.target);
+            const action = $form.attr('data-action');
+
+            if (action === 'update') {
+                return fileUpdateCheck();
+            } else {
+                return fileInsertCheck();
+            }
+        }
+
+        // 更新確認ダイアログ
+        function fileInsertCheck() {
+
+            // 重複有無フラグ
+            let duplicationFlg = false;
+
+            // querySelectorAllを使って配列で取得
+           const $fileNames = $('input[name="fileName"]');
+
+            // fileNamesの中身とfileNameListを比較して重複チェック
+            $fileNames.each(function () {
+                // inputの値（ファイル名）を取得
+                const fileName = $(this).val();
+                if (fileNameList.includes(fileName)) {
+                    duplicationFlg = true;
+                }
+            });
+
+            // 重複している場合は確認ダイアログを表示
+            if (duplicationFlg) {
+                if(window.confirm('登録済みのファイルと同じ名前のファイルがあります。登録してもよろしいですか？')){
+                    showLoading();
+                    return true;
+                }
+                return false;
+            }
+            // 重複していない場合は確認ダイアログを表示
+            if(window.confirm('登録します。よろしいですか？')){
+                showLoading();
+                return true;
+            }
+            return false;
+        }
+
+        // 更新確認ダイアログ
+        function fileUpdateCheck() {
+            // ファイル名本体と拡張子を結合する処理
+            const $fileItems = $('.flexbox'); // jQueryセレクタを使用
+            const fileNames = []; // 複数のファイル名を格納する配列
+
+            // 重複有無フラグ
+            let duplicationFlg = false;
+
+            $fileItems.each(function (index, item) { // .eachを使用
+                const $fileNameInput = $(item).find('input[name="noExtensionFileName"]');
+                const $fileExtensionSpan = $(item).find('span[name^="fileExtension"]');
+
+                // fileNameInputが存在するか確認
+                if ($fileNameInput.length === 0) {
+                    console.error('fileNameInputが見つかりません');
+                    return; // ここで処理を中断
+                }
+
+                // fileExtensionSpanが存在するか確認
+                let fileExtension = '';
+                if ($fileExtensionSpan.length > 0) {
+                    fileExtension = $fileExtensionSpan.text();
+                } else {
+                    console.error('fileExtensionSpanが見つかりません');
+                }
+
+                // ファイル名本体と拡張子を取得
+                const fileName = $fileNameInput.val();
+                const fullFileName = fileName + '.' + fileExtension;
+
+                // 配列をループ
+                if (!duplicationFlg) {
+                    $.each(fileNameList, function (index, fileName) {
+                        if (fileName == fullFileName) {
+                            duplicationFlg = true;
+                        }
+                    });
+                }
+
+                // ファイル名を配列に追加
+                fileNames.push(fullFileName);
+            });
+
+            // 複数のファイル名をカンマ区切りで1つの文字列にまとめる
+            const combinedFileNames = fileNames.join(',');
+
+            // fileName[] の hidden フィールドにまとめたファイル名を設定
+            const $hiddenField = $('input[name="fileName[]"]');
+            if ($hiddenField.length > 0) {
+                $hiddenField.val(combinedFileNames);
+            } else {
+                console.error('hiddenFieldが見つかりません');
+            }
+
+            if (duplicationFlg) {
+                return window.confirm('登録済みのファイルと同じ名前のファイルがあります。更新してもよろしいですか？');
+            }
+            return window.confirm('更新します。よろしいですか？');
+        }
+
+        function clearForm() {
+
+                // テキストフィールド、日付入力、ファイル入力の値を空にする
+                $('input[type="text"], input[type="date"], input[type="file"], textarea,input[name="userId"], input[name="userName"], input[name="fileName[]"]').val('');
+
+                // ファイル名表示を「選択されていません」にする
+                $('#file_name1, #file_name2, #file_name3').text('選択されていません');
+
+                // 参加者リストも空にする
+                $('#externalSelectedList, #selectedList, #detailList').empty();
+
+                // 参加者リストの中身を確認
+                updateExternalSelectedListVisibility();
+
+                if(insert != null){
+
+                // 入力状況の確認
+                validateForm();
+                }
+
+                if(update != null){
+
+                // 入力状況の確認
+                updateValidateForm();
+                }
+            }
+
+            $(window).on('load', function () {
+                // エラーがあるかどうか
+                if ($('.errorMessage').length > 0) {
+                    errorAlert();
+                }
+
+                modalSetUp();
+
+                //参加者選択の初期値を取得
+                listItemsBefore = Array.from($('#externalSelectedList li'));
+
+                // 初期表示の際はリストを非表示にするために判定を実行
+                updateExternalSelectedListVisibility();
+            });
+
+        $(document).ready(function () {
+            // externalSelectedList内のすべての<li>要素を取得し、変数に格納
+            var externalListItems = $('#externalSelectedList li');
+
+            // 子要素を削除
+            $('#externalSelectedList').empty();  // または .html('') でリスト内を空にする
+
+            // 格納した変数でループ処理を行う
+            externalListItems.each(function () {
+                getDetailsByUserId($(this).attr('id'), $(this).text());
+            });
+        });
+
+        /**
+         * ファイル登録画面
+         */
+         if(insert != null){
+
+            function validateForm() {
+
+                // ファイルサイズの合計を計算
+                let totalSize = 0;
+
+                // .mp3ファイルのカウント
+                let mp3Count = 0;
+
+                // ファイルサイズ超過フラグ
+                let idTotalSizeOver = false;
+
+                // すべてのファイル選択フィールドをチェック
+                $('.eitherCheck').each(function() {
+                    const file = this.files[0]; // 選択されたファイル
+                    if (file) {
+                        totalSize += file.size; // 合計サイズに加算
+
+                        // 拡張子が.mp3かどうかをチェック
+                        if (file.name.toLowerCase().endsWith('.mp3')) {
+                            mp3Count++; // .mp3ファイルが見つかったらカウント
+                        }
+                    }
+                });
+
+
+                // 合計サイズをMBに変換
+                const totalSizeInMB = (totalSize / (1024 * 1024)).toFixed(2); // MBに変換して小数点2桁に
+
+                // アップロード上限値
+                const maxSizeInBytes = 500;
+
+                if(totalSizeInMB > maxSizeInBytes){
+                    idTotalSizeOver = true;
+                } else {
+                    idTotalSizeOver = false;
+                }
+
+                // 全てのclass="check"が入力済みか確認
+                let allCheckValid = $('.check').toArray().every(function (element) {
+                    // input値またはリストアイテム
+                    return element.value !== "" && $('#externalSelectedList').children().length !== 0;
+                });
+
+                // class="eitherCheck"の少なくとも一つが入力済みか確認
+                let anyEitherCheckValid = $('.eitherCheck').toArray().some(function (element) {
+                    // input値が空でないか
+                    return element.value !== "";
+                });
+
+                // 条件に基づいて登録ボタンを切り替え
+                if (allCheckValid && anyEitherCheckValid && !idTotalSizeOver && mp3Count < 2) {
+                    $("input[name='insertButton']").prop('disabled', false);
+                } else {
+                    $("input[name='insertButton']").prop('disabled', true);
+                }
+            }
+
+            // 表示するファイル名を設定する関数
+            function fileNameSet(inputElement, fileIdName,fileIdValue) {
+                var file = $(inputElement).prop('files')[0];
+                // ファイルが選択されていない場合
+                if (file == null) {
+                    $(fileIdName).text("選択されていません");
+                    $(fileIdValue).val("");
+                } else {
+                    $(fileIdName).text(file.name);
+                    $(fileIdValue).val(file.name);
+                }
+            }
+
+            //登録ボタン活性・非活性
+            //必須項目にはcheck,部分必須にはeitherCheckをclassに付与する必要あり
+            // フォームの要素を監視し、登録ボタンを制御
+            jQuery(function ($) {
+                $('form[data-validate]').on('input change', function () {
+                    validateForm();
+                });
+
+                // ファイル削除ボタンも変更時に確認を呼び出す
+                $('.minus').on('click', function () {
+                    validateForm();
+                });
+
+                // 完了ボタン押下時に確認を呼び出す
+                $('.complete_button').on('click', function () {
+                    validateForm();
+                });
+
+                // 初回チェック
+                validateForm();
+            });
+
+            //ファイル選択
+            $("#file1").on('change', function () {
+                fileNameSet(this, "#file_name1","#fileName1");
+            });
+            $("#file2").on('change', function () {
+                fileNameSet(this, "#file_name2","#fileName2");
+            });
+            $("#file3").on('change', function () {
+                fileNameSet(this, "#file_name3","#fileName3");
+            });
+
+            //ファイル選択解除
+            $("#delete_file1").on('click', function () {
+                $("#file1").val("");
+                $("#file_name1").text("選択されていません");
+                $("#fileName1").val("");
+            });
+            $("#delete_file2").on('click', function () {
+                $("#file2").val("");
+                $("#file_name2").text("選択されていません");
+                $("#fileName2").val("");
+            });
+            $("#delete_file3").on('click', function () {
+                $("#file3").val("");
+                $("#file_name3").text("選択されていません");
+                $("#fileName3").val("");
+            });
+         }
+
+        /**
+         * ファイル更新画面
+         */
+
+         if(update != null){
+             // ファイル更新画面の入力値チェック
+             function updateValidateForm() {
+                 // 必須項目（class="check"）がすべて入力されているか確認
+                 const allCheckValid = $('.check').toArray().every(el =>
+                     $(el).val() !== "" && $('#externalSelectedList').children().length !== 0
+                 );
+
+                 // 入力値が変更されているか確認（初期値と比較）
+                 const changeCheckValid = $('.check').toArray().some(el =>
+                     inputs[$(el).attr('id')] !== $(el).val() // 初期値と現在の値を比較
+                 );
+
+                 // 更新後の参加者リストを取得
+                 const listItemsAfterArray = Array.from($('#externalSelectedList li'));
+
+                 // リストの数が異なる場合やIDが異なる場合に変更ありと判断
+                 const listChangeValid = listItemsBefore.length !== listItemsAfterArray.length ||
+                     listItemsBefore.some((item, i) => item.id !== listItemsAfterArray[i]?.id);
+
+                 // 全てのチェックが有効で、かつ入力またはリストに変更がある場合、更新ボタンを有効にする
+                 if (allCheckValid && (changeCheckValid || listChangeValid)) {
+                     // 更新ボタンを有効
+                     $("input[name='updateButton']").prop('disabled', false);
+                 } else {
+                     // 更新ボタンを無効
+                     $("input[name='updateButton']").prop('disabled', true);
+                 }
+             }
+
+             // 初期値の設定
+
+             // reduce()メソッドで繰り返し処理を行い、idに配列inputsの要素が入る
+             // 存在するidの情報をaccに格納する
+             const inputs = ['title', 'inputDate', 'file1', 'file2', 'file3']
+                 .reduce((acc, id) => {
+                     // 各入力要素を取得し、存在する場合はその値を保存
+                     const $el = $("#" + id);
+                     if ($el.length) acc[id] = $el.val(); // 値があればaccオブジェクトに追加
+                     return acc;
+                 }, {}); // 空のオブジェクトからスタート
+
+             // フォームの要素を監視し、更新ボタンを制御する
+             $(function () {
+                 // フォームの入力や変更を監視
+                 $('form[data-validate]').on('input change', updateValidateForm);
+                 // 完了ボタンがクリックされたときにも検証
+                 $('.complete_button').on('click', updateValidateForm);
+             });
+         }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+<html xmlns:th="http://www.thymeleaf.org" th:remove="tag">
+<meta charset="UTF-8" />
+<div th:fragment="layout-header" th:remove="tag">
+    <span class="header-title">ファイル管理システム</span>
+    <span class="header-name" th:unless="${#strings.isEmpty(session.loginUser)}"
+        th:text="${session.loginUser.userName.length() > 10 ? session.loginUser.userName.substring(0, 10) + '...' : session.loginUser.userName}+'さん'"></span>
+</div>
+
+</html>

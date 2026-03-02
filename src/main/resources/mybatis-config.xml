@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <settings>
+        <!-- スネークケースのデータベースのカラム名を自動でキャメルケースに変換する -->
+        <setting name="mapUnderscoreToCamelCase" value="true" />
+        <setting name="defaultStatementTimeout" value="90" />
+    </settings>
+
+    <typeHandlers>
+        <typeHandler handler="com.example.ByteArrayTypeHandler" />
+    </typeHandlers>
+
+    <typeHandlers>
+        <typeHandler handler="fms.handler.FileTypeHandler"/>
+    </typeHandlers>
+
+</configuration>

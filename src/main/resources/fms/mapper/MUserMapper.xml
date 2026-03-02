@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- @author 大塚 月愛 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="fms.mapper.MUserMapper">
+
+  <resultMap id="userDetail" type="fms.dto.UserDto">
+      <id column="user_id" property="userId" />
+      <result column="post_id" property="postId" />
+      <result column="post_name" property="postName" />
+      <result column="user_name" property="userName" />
+      <result column="user_name_kana" property="userNameKana" />
+      <result column="password" property="password" />
+      <result column="role" property="role" />
+      <result column="retirement_flg" property="retirementFlg" />
+      <result column="version" property="version" />
+      <collection property="teamDtoList" ofType="fms.dto.TeamDto" >
+          <result column="team_id" property="teamId" />
+          <result column="team_name" property="teamName" />
+    </collection>
+</resultMap>
+
+  <select id="getUserDtoList" resultMap="userDetail">
+
+    SELECT
+      us.user_id,
+      team.team_id,
+      team.team_name,
+      post.post_id,
+      post.post_name,
+      us.user_name,
+      us.user_name_kana,
+      us.password,
+      us.role,
+      us.retirement_flg,
+      us.version
+    FROM
+      m_user us
+    LEFT OUTER JOIN
+      m_user_team user_team ON us.user_id = user_team.user_id
+    LEFT OUTER JOIN
+      m_team team ON user_team.team_id = team.team_id
+    LEFT OUTER JOIN
+      m_post post ON us.post_id = post.post_id
+    <where>
+      <if test="retirementFlg != null and retirementFlg != '-1'">
+        us.retirement_flg = #{retirementFlg}
+      </if>
+      <if test="userId != null and userId != ''">
+        and us.user_id = #{userId}
+      </if>
+    </where>
+    ORDER BY
+      us.retirement_flg ASC,
+      us.post_id ASC,
+      team.team_id ASC
+
+  </select>
+
+  <select id="getUserDto" resultMap="userDetail">
+
+    SELECT
+      us.user_id,
+      team.team_id,
+      team.team_name,
+      post.post_id,
+      post.post_name,
+      us.user_name,
+      us.user_name_kana,
+      us.password,
+      us.role,
+      us.retirement_flg,
+      us.version
+    FROM
+      m_user us
+    LEFT OUTER JOIN
+      m_user_team user_team ON us.user_id = user_team.user_id
+    LEFT OUTER JOIN
+      m_team team ON user_team.team_id = team.team_id
+    LEFT OUTER JOIN
+      m_post post ON us.post_id = post.post_id
+    WHERE
+      us.user_id = #{userId}
+    ORDER BY
+      us.retirement_flg ASC,
+      us.user_id ASC,
+      team.team_id ASC
+
+  </select>
+
+  <select id="checkUserId" resultType="Integer">
+    SELECT
+      COUNT(*)
+    FROM m_user
+    WHERE user_id = #{userId}
+  </select>
+
+  <insert id="insertMUser" parameterType="fms.entity.MUser"
+  useGeneratedKeys="true" keyProperty="userId">
+    INSERT INTO m_user (
+        user_id,
+        post_id,
+        user_name,
+        user_name_kana,
+        password,
+        role,
+        retirement_flg,
+        first_create_date,
+        last_modified_date,
+        last_modified_user
+    )
+    VALUES(
+        #{userId},
+        #{postId},
+        #{userName},
+        #{userNameKana},
+        #{password},
+        #{role},
+        #{retirementFlg},
+        #{firstCreateDate},
+        #{lastModifiedDate},
+        #{lastModifiedUser}
+    )
+  </insert>
+
+  <select id="getVersion" resultType="Integer">
+    SELECT
+        version
+    FROM m_user
+    WHERE user_id = #{userId}
+  </select>
+
+  <update id="updateMUser">
+    UPDATE m_user
+    SET
+        user_id = #{userId},
+        post_id = #{postId},
+        user_name = #{userName},
+        user_name_kana = #{userNameKana},
+        password = #{password},
+        role = #{role},
+        retirement_flg = #{retirementFlg},
+        last_modified_date = #{lastModifiedDate},
+        last_modified_user = #{lastModifiedUser},
+        version = #{version} + 1
+    WHERE user_id = #{userId}
+        AND version = #{version}
+  </update>
+
+<!-- @author 安藤 優海 -->
+  <update id="updateMUserPassword">
+    UPDATE m_user
+    SET
+        password = #{password},
+        last_modified_date = #{lastModifiedDate},
+        last_modified_user = #{lastModifiedUser},
+        version = #{version} + 1
+    WHERE user_id = #{userId}
+        AND version = #{version}
+  </update>
+
+ </mapper>

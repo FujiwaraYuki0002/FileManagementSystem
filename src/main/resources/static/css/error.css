@@ -1,0 +1,54 @@
+@charset "UTF-8";
+
+/* エラーCSS */
+
+/* エラー時テキストボックス */
+.errorTextbox {
+    background-color: #F8CBAD;
+    border: 1px solid red;
+    margin-left: 30px;
+    font-size: 20px;
+}
+
+/* エラーアラート */
+#errorAlert {
+    display: none;
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    /*  横方向で中央に配置 */
+    background-color: white;
+    padding: 30px;
+    border: 1px solid black;
+    z-index: 5005;
+    width: 40%;
+    height: auto;
+    min-height: 80px;
+    font-family: Arial, sans-serif;
+}
+
+/* エラーメッセージのスタイル */
+.errorMessage {
+    color: red;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+/* OKボタンのスタイル */
+#okButton {
+    padding: 10px 30px;
+    background-color: #2589d0;
+    color: white;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    border-radius: 5px;
+}
+
+#okButton:hover {
+    background-color: #1579c0;
+}

@@ -1,0 +1,169 @@
+<!-- @author 大塚 月愛 -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+
+<title>ユーザー管理</title>
+
+<body th:object="${userForm}">
+    <!--メイン-->
+    <div class="container">
+        <!--完了メッセージ-->
+        <th:if>
+            <div th:unless="${#strings.isEmpty(completeMessage)}" class="compelete-message"
+                th:text="${completeMessage}"></div>
+            <div th:if="${#strings.isEmpty(completeMessage)}" class="non_compelete-message">
+            </div>
+        </th:if>
+        <div class="title">
+            <h1>ユーザー管理</h1>
+        </div>
+        <div class="user_type">
+            <input type="submit" value="現職者のみ" class="button"
+                th:onclick="|location.href='@{/user/index?retirementFlg=0}'|">
+            <input type="submit" value="退職者のみ" class="button"
+                th:onclick="|location.href='@{/user/index?retirementFlg=1}'|">
+            <input type="submit" value="すべて" class="button"
+                th:onclick="|location.href='@{/user/index?retirementFlg=-1}'|">
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>選択</th>
+                    <th>ユーザーID</th>
+                    <th>ユーザー名</th>
+                    <th>ユーザー名(カナ)</th>
+                    <th>所属</th>
+                    <th>役職</th>
+                    <th>権限</th>
+                    <th>ステータス</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+        <div class="paging user">
+            <input type="submit" value="l<" id="firstPage" class="white button">
+            <input type="submit" value="<" id="prevPage" class="white button">
+            <input type="submit" value=">" id="nextPage" class="white button">
+            <input type="submit" value=">l" id="lastPage" class="white button">
+            <p><span id="pageNumber">1</span> / <span id="totalPages">1</span>ページ</p>
+        </div>
+        </form>
+    </div>
+    <!--フッター-->
+    <footer>
+        <div class="right">
+            <form class="display-inline" th:action="@{/user/update}" method="post">
+                <input type="submit" value="編集" name="update" class="button" disabled>
+                <input type="hidden" name="userId" id="upd">
+            </form>
+            <form class="display-inline" th:action="@{/user/insert}" method="post">
+                <input type="submit" value="新規登録" name="insert" class="button">
+            </form>
+        </div>
+    </footer>
+
+    <script src="/js/paging.js"></script>
+    <script th:inline="javascript">
+        $(document).ready(() => {
+            // サーバーサイドから渡されたユーザーデータ（Thymeleafで埋め込む）
+            const users = /*[[${userDtoList}]]*/[];  // サーバーサイドから渡されたユーザーデータ
+            const selectedId = /*[[${userForm.userId}]]*/ null;
+
+            if (users.length === 0) {
+                console.warn("No users found.");
+            } else {
+                // Paginatorをインスタンス化してページング処理を開始
+                const userPaginator = new Paginator(users, 10, updateTableBody, 'tableBody', selectedId);
+                userPaginator.updatePage(1);  // 初期ページを表示
+
+                // ページネーションボタンにイベントリスナーを追加（共通部品で定義されたメソッドを呼び出し）
+                userPaginator.addPaginationButtonListeners();
+
+                // 更新画面から戻った場合に、選択したユーザーがいるページに移動
+                if (selectedId !== null) {
+                    const userIndex = users.findIndex(user => user.userId === selectedId);
+                    if (userIndex !== -1) {
+                        const selectedPage = Math.floor(userIndex / 10) + 1;
+                        currentPage = selectedPage;  // ユーザーが選択されていたページに移動
+                        userPaginator.updatePage(currentPage);  // 更新されたページを表示
+                    }
+                }
+            }
+        });
+
+        // ドキュメント全体でクリックイベントをリッスンして、ドロップダウンを閉じる処理を追加
+        $(document).on('click', function (event) {
+
+            // ラジオボタンが選択されている場合
+            if ($('input[name="userId"]:checked').length > 0) {
+                return; // 何もしない
+            }
+
+            $('input[name="update"]').prop('disabled', true);
+        });
+
+        // テーブルの行を動的に追加する関数
+        function updateTableBody(tableBodyId, data, currentPage, itemsPerPage = 10, selectedUserId = null) {
+            const tableBody = document.getElementById(tableBodyId);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = Math.min(startIdx + itemsPerPage, data.length);
+
+            // 既存の行をクリア
+            tableBody.innerHTML = '';
+
+            // 現在のページに対応するデータを追加
+            for (let i = startIdx; i < endIdx; i++) {
+                const item = data[i];
+                const tr = document.createElement('tr');
+
+                // 'retirement' クラスの追加
+                if (item.retirementFlg === 1) {
+                    tr.classList.add('retirement');
+                }
+
+                // クリックイベントの追加
+                tr.onclick = () => {
+                    selectRadioButton(`option${item.userId}`);
+                };
+                tr.innerHTML = `
+                    <td><input type="radio" name="userId" value="${item.userId}" id="option${item.userId}"></td>
+                    <td>${item.userId}</td>
+                    <td title = ${item.userName}>${item.userName.length > 15 ? item.userName.slice(0, 15) + '...' : item.userName}</td>
+                    <td title="${item.userNameKana}">${item.userNameKana.length > 15 ? item.userNameKana.slice(0, 15) + '...' : item.userNameKana}</td>
+                    <td title="${Array.isArray(item.teamDtoList) ? item.teamDtoList.map(team => team.teamName).join(', ') : item.teamName}">
+                            ${Array.isArray(item.teamDtoList)
+                        ? (item.teamDtoList.map(team => team.teamName).join(', ').length > 15
+                            ? item.teamDtoList.map(team => team.teamName).join(', ').slice(0, 15) + '...'
+                            : item.teamDtoList.map(team => team.teamName).join(', '))
+                        : (item.teamName.length > 15 ? item.teamName.slice(0, 15) + '...' : item.teamName)
+                    }
+                        </td>
+                    <td>${item.postName}</td>
+                    <td>${item.role === 1 ? '管理者' : '一般'}</td>
+                    <td>${item.retirementFlg === 0 ? '現職者' : '退職者'}</td>
+                `;
+                tableBody.appendChild(tr);
+            }
+
+            // ☆更新画面から戻った場合の選択を保持する
+            let selectedId = /*[[${userForm.userId}]]*/ null;
+            if (selectedId === null) return; // null の場合は処理しない
+
+            let radioButtons = document.getElementsByName("userId");
+            let selectedIndex = -1;
+
+            selectRadioButton("option" + selectedId);
+
+            radioButtons.forEach(radio => {
+                if (radio.value === selectedId.toString()) {
+                    radio.checked = true;
+                }
+            });
+
+        }
+
+    </script>
+</body>
+
+</html>

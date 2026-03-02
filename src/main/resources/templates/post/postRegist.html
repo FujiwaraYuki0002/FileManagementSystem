@@ -1,0 +1,196 @@
+<!--/* @author 安藤 優海 */-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+<title th:text="${update != null ? '役職更新' : '役職登録'}"></title>
+
+<body>
+    <!--/*メイン*/-->
+    <div class="container">
+
+        <div class="title">
+            <h1 th:text="${update != null ? '役職更新' : '役職登録'}"></h1>
+        </div>
+        <div class="center">
+            <div class="Form_layout">
+                <div class="content_left" style="padding-bottom: 0;margin: 0;">
+                    <label>登録済み情報</label>
+                </div>
+            </div>
+        </div>
+        <div class="center">
+            <div class="colmun">
+                <div class="content_left">
+                    <div class="overflow">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>役職ID</th>
+                                    <th>役職名</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr th:each="mPostList: ${mPostList}">
+                                    <td th:text="${mPostList.postId}"></td>
+                                    <td th:text="${mPostList.postName}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="content_right center">
+                    <div class="Form_layout" th:object="${postForm}">
+                        <label>役職名</label>
+
+                            <input type="text" placeholder="1文字～20文字で入力してください"
+                                class="textbox check nameField"
+                                id="input1"
+                                size = 35px
+                                autocomplete="off"
+                                name="postName"
+                                th:value="${postForm.postName}"
+                                th:classappend="${#fields.hasErrors('postName') ? 'errorTextbox' : ''}"
+                                th:disabled="${exclusiveControl != null && exclusiveControl}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--/*フッター*/-->
+    <footer>
+        <div class="left">
+            <!--/*登録の戻るボタン*/-->
+            <form th:action="@{/post/insertBack}"
+                  th:if="${insert != null}"
+                  method="post">
+            <input type="submit"
+                value="戻る"
+                class="button">
+            </form>
+
+            <!--/*更新の戻るボタン*/-->
+            <form th:action="@{/post/updateBack}"
+                  th:if="${update != null}"
+                  method="post">
+                <input type="submit"
+                       value="戻る"
+                       class="button">
+            </form>
+        </div>
+
+        <div class="right">
+            <!--/*登録*/-->
+            <form class="display-inline" th:action="@{/post/insert}"
+                method="post"
+                onsubmit="return insertcheck()"
+                th:if="${insert != null}">
+             <input type="submit" value="登録"
+                    name="insertButton"
+                    class="button"
+                    id="submit1"
+                    disabled>
+             <input type="hidden"
+                    name="postName"
+                    id="postName">
+            </form>
+
+            <!--/*更新*/-->
+            <form class="display-inline" th:action="@{/post/update}"
+                method="post"
+                onsubmit="return updatecheck()"
+                th:object="${postForm}"
+                th:if="${update != null}">
+                <input type="submit" value="更新"
+                    name="updateButton"
+                    class="button"
+                    id="submit1"
+                    disabled>
+                <input type="hidden" name="postId" th:value="*{postId}">
+                <input type="hidden" name="version" th:value="*{version}">
+                <input type="hidden" name="screenId" th:value="*{screenId}">
+                <input type="hidden" name="postName" id="postName">
+            </form>
+        </div>
+    </footer>
+
+    <!--/* オーバーレイ */-->
+        <div id="overlay"></div>
+
+    <!--/* エラーダイアログ */-->
+    <div id="errorAlert" th:object="${postForm}">
+        <span th:if="${completeMessage} != null"
+              th:text="${completeMessage}"
+              class="errorMessage"
+              style="color: #003366;"></span>
+        <div th:each="error:${#fields.detailedErrors()}">
+            <span th:text="${error.message}"
+                  class="errorMessage"></span>
+        </div>
+      <button id="okButton" onclick="closeAlert('input1')">OK</button>
+    </div>
+
+    <script>
+        // 存在するidの情報をaccに格納する
+        const inputs = ['input1']
+            .reduce((acc, id) => {
+                // 各入力要素を取得し、存在する場合はその値を保存
+                const $el = $("#" + id);
+                if ($el.length) acc[id] = $el.val(); // 値があればaccオブジェクトに追加
+                return acc;
+            }, {}); // 空のオブジェクトからスタート
+
+            // 入力値のチェックを行う関数
+            function inputCheck(inputElement) {
+
+                $("#postName").val($("#input1").val());
+
+                // 必須項目（class="check"）がすべて入力されているか確認
+                const allCheckValid = $('.check').toArray().every(el =>
+                    $(el).val() !== ""
+                );
+
+                // 入力値が変更されているか確認（初期値と比較）
+                const changeCheckValid = $('.check').toArray().some(el =>
+                    inputs[$(el).attr('id')] !== $(el).val() // 初期値と現在の値を比較
+                );
+
+                if (allCheckValid && changeCheckValid) {
+                    // 更新
+                    if ($('input[name="updateButton"]') != null) {
+                        $('input[name="updateButton"]').prop('disabled', false);
+                    }
+                    // 登録
+                    if ($('input[name="insertButton"]')!= null) {
+                        $('input[name="insertButton"]').prop('disabled', false);
+                    }
+                } else {
+                    // 更新
+                    if ($('input[name="updateButton"]') != null) {
+                        $('input[name="updateButton"]').prop('disabled', true);
+                    }
+                    // 登録
+                    if ($('input[name="insertButton"]')!= null) {
+                        $('input[name="insertButton"]').prop('disabled', true);
+                    }
+                }
+            }
+            $(function () {
+                $('#input1').on('input change', function () {
+                    inputCheck(this);
+                });
+            });
+
+         // 初期表示の処理
+           jQuery(function ($) {
+         // エラーがあるかどうか
+              if ($('.errorMessage').length > 0) {
+                  errorAlert();
+                            }
+                        });
+       </script>
+
+</body>
+
+</html>

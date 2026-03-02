@@ -1,0 +1,58 @@
+<!--/* @author 髙橋 真澄 */-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+
+<title>ログイン</title>
+
+<body>
+    <div class="container_login">
+        <form class="display-inline" th:action="@{/login}" method="post"
+            id="login-form">
+            <div class="colmun_common">
+                <div class="left_label">
+                    <label>ID</label><label>パスワード</label>
+                </div>
+                <div class="right_textbox" th:object="${loginForm}">
+                    <input type="text" class="textbox" size="40" name="userId"
+                        id="inputUserId" th:value="*{userId}"
+                        th:classappend="${errorMessageList == null} ? '' : 'errorTextbox'">
+                    <input type="password" class="textbox" size="40"
+                        name="password" id="inputPassword"
+                        th:value="*{password}"
+                        th:classappend="${errorMessageList == null} ? '' : 'errorTextbox'">
+                </div>
+            </div>
+            <br>
+        </form>
+        <input type="submit" value="ログイン" class="button" form="login-form">
+    </div>
+
+    <!--/* オーバーレイ */-->
+    <div id="overlay"></div>
+
+    <!--/* エラーダイアログ */-->
+    <div id="errorAlert">
+        <div th:each="error, stat : ${errorMessageList}">
+            <span th:text="${error}" class="errorMessage"></span>
+        </div>
+        <div th:if="${exceptionErrorMessage != null}" >
+            <span th:text="${exceptionErrorMessage}" class="errorMessage"></span>
+        </div>
+        <button id="okButton" onclick="closeAlert('inputUserId')">OK</button>
+    </div>
+
+    <script>
+        // 初期表示の処理
+        jQuery(function ($) {
+            // エラーがあるかどうか
+            if ($('.errorMessage').length > 0) {
+                errorAlert();
+        element.addEventListener("keydown", input_tab);
+
+            }
+        });
+    </script>
+</body>
+
+</html>

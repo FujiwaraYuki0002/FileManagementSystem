@@ -1,0 +1,268 @@
+@charset "UTF-8";
+
+/* テーブルCSS */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #003366;
+}
+
+thead tr {
+    background-color: #ACE5E4;
+}
+
+th,
+td {
+    font-size: 13px;
+    padding: 0px 0px;
+    margin: 0px 5px;
+    text-align: center;
+    border: 1.8px solid #FFFFFF;
+}
+
+tr {
+    /* 行をクリック可能にする */
+    background-color: #F2F2F2;
+}
+.titleColumn{
+    max-width: 100px;
+       /* ここで幅を統一 */
+       min-width: 100px;
+       white-space: nowrap;
+       overflow: hidden;
+       text-overflow: ellipsis;
+       vertical-align: middle;
+}
+.fileColumn {
+    max-width: 110px;
+    /* ここで幅を統一 */
+    min-width: 110px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+.postNameColumn,
+.teamNameColumn{
+    max-width: 220px;
+    /* ここで幅を統一 */
+    min-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+.ellipsis,
+.titleEllipsis,
+.indexFileEllipsis {
+    max-width: 100%;
+    /* 親要素の幅に合わせる */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ellipsis:hover {
+    color: #0b7dda;
+}
+
+/* 参加者の幅 */
+.joinUserColumn {
+    width: 110px;
+    /* テキストが改行されないようにする */
+    white-space: nowrap;
+}
+
+/* 日付の幅 */
+.dateColumn {
+    width: 100px;
+}
+
+/* 日付の幅 */
+.dlColumn {
+    width: 50px;
+}
+
+/* 日付の幅 */
+.noColumn {
+    width: 50px;
+}
+
+/* テーブルの偶数行は色を変える */
+table tr:nth-child(even) {
+    background-color: #D9D9D9;
+}
+
+/* 退職者 */
+tr.retirement,
+table tr:nth-child(even).retirement {
+    background-color: darkgrey;
+}
+
+a:hover {
+    color: #0b7dda;
+}
+
+/* 役職管理と所属管理のテーブルレイアウト */
+.post-table,
+.team-table {
+    margin: auto;
+    width:100%;
+    border-collapse: collapse;
+    color: #003366;
+}
+
+.post-table thead tr,
+.team-table thead tr {
+    background-color: #ACE5E4;
+}
+
+.post-table th,
+.post-table td,
+.team-table th,
+.team-table td {
+    padding: auto;
+    text-align: center;
+    border: 1.8px solid #FFFFFF;
+    /* 役職と所属のテーブル列幅を統一 */
+}
+
+.post-table #th1,
+.team-table #th1 {
+    width: 10%;
+    /* 役職と所属のテーブル列幅を統一 */
+}
+
+.post-table #th2,
+.team-table #th2 {
+    width: 20%;
+    /* 役職と所属のテーブル列幅を統一 */
+}
+
+.post-table #th3,
+.team-table #th3 {
+    width: 70%;
+    /* 役職と所属のテーブル列幅を統一 */
+}
+
+.post-table tr,
+.team-table tr {
+    background-color: #F2F2F2;
+}
+
+.post-table tr:nth-child(even),
+.team-table tr:nth-child(even) {
+    background-color: #D9D9D9;
+}
+
+.post-table tr.retirement,
+.team-table tr.retirement,
+.post-table tr:nth-child(even).retirement,
+.team-table tr:nth-child(even).retirement {
+    background-color: darkgrey;
+}
+
+/* テーブルヘッダーの固定 */
+thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #ACE5E4;
+}
+
+/* 現職者のみ・退職者含む切り替えボタン */
+.user_type {
+    text-align: right;
+    margin-bottom: 5px;
+}
+
+/* ファイル名のツールチップ */
+.tooltip {
+    position: relative;
+    cursor: pointer;
+    /* ツールチップを中央に配置 */
+    display: inline-block;
+}
+
+/* ツールチップのテキスト */
+.tooltip-text {
+    opacity: 0;
+    visibility: hidden;
+    position: absolute;
+    /* ここを fixed にすると、画面全体に対して配置できる */
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -30px;
+    width: auto;
+    /* 幅を制限しない */
+    max-width: none;
+    /* 最大幅の制限を解除 */
+    white-space: nowrap;
+    /* 折り返しなし */
+    font-size: 0.8rem;
+    line-height: 1.3;
+    background: #333;
+    color: #fff;
+    border-radius: 3px;
+    padding: 5px;
+    transition: 0.3s ease-in;
+    z-index: 1000;
+    /* 他の要素の上に表示 */
+}
+
+/* 左側に表示されるツールチップ */
+.tooltip-clear .tooltip-text {
+    left: 15%;
+    bottom: -30px;
+}
+
+/* ホバー時にツールチップの非表示を解除 */
+.tooltip:hover .tooltip-text {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 安藤修正2025012 */
+/* テーブルホバー */
+tr:hover,
+table tr:nth-child(even):hover{
+    background-color:rgb(135,206,250,0.562);
+}
+/* 選択されたら行の色を変更する */
+tr:has(input[type="radio"]:checked) {
+   background-color: #87cefa;
+}
+
+/* 安藤修正2025012 */
+/* ページング */
+.paging {
+    padding: 10px;
+    text-align: center;
+    top: 650px;
+    left: 45%;
+    position:fixed
+
+}
+.paging.post,
+.paging.team{
+    top: 400px;
+    left: 45%;
+    position:fixed
+    }
+
+.paging.user{
+    top: 450px;
+    left: 45%;
+    position:fixed
+}
+.paging p{
+    font-size: 15px;
+}
+#firstPage,
+#prevPage,
+#nextPage,
+#lastPage{
+    padding: 5px 20px;
+}

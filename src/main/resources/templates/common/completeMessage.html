@@ -1,0 +1,5 @@
+ <!--/* 完了メッセージエリア */-->
+ <div th:unless="${#strings.isEmpty(completeMessage)}"class="compelete-message" th:text="${completeMessage}">
+</div>
+<div th:if="${#strings.isEmpty(completeMessage)}" class="non_compelete-message">
+ </div>

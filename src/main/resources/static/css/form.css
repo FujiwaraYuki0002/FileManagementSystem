@@ -1,0 +1,541 @@
+@charset "UTF-8";
+
+/* フォームCSS */
+
+/* ラベルとテキストボックス */
+.colmun_common {
+    width: 600px;
+    height: auto;
+    display: flex;
+    margin: 0 auto;
+}
+
+.left_label {
+    width: auto;
+    height: auto;
+    white-space: nowrap;
+    margin: 0 5px 0 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.right_textbox {
+    width: 400px;
+    height: auto;
+    margin: 0 0 0 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 検索画面カラムレイアウト */
+.search_colmun_common {
+    width: 100%;
+    height: auto;
+    margin: 0;
+
+    .right_textbox {
+        width: 100%;
+        height: auto;
+        margin: 0 0 0 0px;
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+
+.left_label {
+    text-align: right;
+}
+
+.insert_text {
+    font-size: 15px;
+}
+
+.colmun_common input,
+.colmun_common select,
+.colmun_common .ScrollBox {
+    margin: 20px 10px 10px 10px;
+}
+
+.colmun_common span {
+    margin: 19px 10px 0 10px;
+}
+
+.colmun_common span.file_select {
+    margin: 0px 10px 20px 10px;
+}
+
+.colmun_common p {
+    margin: 20px 10px 14px 10px;
+}
+
+.colmun_common label {
+    margin: 19px 0px 9px 10px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.colmun_common label.first_file_label {
+    margin: 40px 0px 5px 10px;
+}
+
+.colmun_common input {
+    font-size: 20px;
+}
+
+.colmun_common select {
+    font-size: 20px;
+}
+
+.colmun_common input.date {
+    font-size: 18px;
+    width: 100%;
+}
+
+.search_colomn {
+    width: 200px;
+}
+
+/*0313安藤修正*/
+.search_content_left {
+
+    #showButton {
+        margin: 2px 0px;
+        font-size: 13px;
+        width: auto;
+    }
+
+    label {
+        margin: 13px 0px;
+        font-size: 15px;
+    }
+}
+
+.search_colmun_common {
+
+    label {
+        margin: 2px 0px;
+        font-size: 14px;
+    }
+
+    input.textbox {
+        margin: 2px 0px;
+        font-size: 13px;
+    }
+
+    input.date {
+        margin: 2px 0px;
+        font-size: 13px;
+    }
+
+    input.button {
+        font-size: 10px;
+        margin: 3px 0px;
+    }
+
+    .search_button_area {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.datebox {
+    margin: 1px 0px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+/* 検索フォームの高さ */
+#searchForm {
+    height: auto;
+}
+
+
+/* スクロールボックス */
+.ScrollBox {
+    overflow: auto;
+    width: 500px;
+    height: 100px;
+    border: 1px black solid;
+    margin-left: 10px;
+}
+
+.overflow {
+    width: 100%;
+    height: 400px;
+    overflow-y: scroll;
+}
+
+.ScrollBox input {
+    margin-top: 2px;
+}
+
+.ScrollBox.search {
+    width: auto;
+    height: 120px;
+}
+
+/* フォームレイアウト */
+.Form_layout {
+    display: flex;
+    overflow: hidden;
+}
+
+.Form_layout label {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+.Form_layout .textbox {
+    margin-left: 30px;
+    font-size: 20px;
+}
+
+label.input_label {
+    font-weight: normal;
+    font-size: 17px;
+    margin-left: 0px;
+}
+
+/* 特定のラジオボタンに対する間隔調整 */
+label.input_label input[type="radio"] {
+    margin-right: 30px;
+    /* ラジオボタンとテキストの間隔 */
+}
+
+/* 特定のチェックボックスに対する間隔調整 */
+label.input_label input[type="checkbox"] {
+    margin-right: 15px;
+    /* チェックボックスとテキストの間隔 */
+}
+
+/* 参加者選択ダイアログ関連のCSS 担当：髙橋 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 5003;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal_content {
+    background-color: #D9D9D9;
+    margin: 5% auto;
+    padding: 20px;
+    width: 80%;
+    height: 500px;
+    display: flex;
+    position: relative;
+}
+
+.list_container {
+    width: 40%;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid black;
+    overflow-y: auto;
+}
+
+.button_container {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 10px;
+}
+
+.toggle_button {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 45%;
+}
+
+.toggle_button:hover {
+    background-color: #0b7dda;
+}
+
+/*  非活性状態のボタン  */
+.toggle_button:disabled {
+    /*  非活性状態の背景色  */
+    background-color: #ccc;
+    /*  非活性状態の文字色  */
+    color: #8e8e8e;
+}
+
+.participant_list {
+    padding: 0;
+    display: none;
+    overflow-y: auto;
+    height: 450px;
+    border-top: 1px solid black;
+}
+
+.participant_list li {
+    cursor: pointer;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+.participant_list li:hover {
+    background-color: #f0f0f0;
+}
+
+.participant_detail_list {
+    padding: 0;
+    margin: 0 auto;
+    display: none;
+    overflow-y: auto;
+    overflow-x: auto;
+    height: 140px;
+    /*  左側に少し余白を追加して見た目を整える  */
+    padding-left: 30px;
+    white-space: nowrap;
+    list-style:none;
+    padding-left: 0;
+}
+
+.participant_detail_list li {
+    cursor: pointer;
+    padding: 2px;
+}
+
+.participant_detail_list li:hover {
+    background-color: #f0f0f0;
+}
+
+.active {
+    display: block;
+}
+
+.detail_container {
+    width: 58%;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.detail_list {
+    flex: 0.8;
+    background-color: white;
+    border: 1px solid black;
+}
+
+.userPlus {
+    padding: 1px 8px 1px 8px;
+    border: none;
+    background-color: #ccc;
+    color: #FFFFFF;
+    font-weight: bold;
+    border-radius: 50%;
+    margin: 3px 5px 5px 0 !important;
+}
+
+.userMinus {
+    padding: 1px 7px 1px 7px;
+    border: none;
+    background-color: #ccc;
+    color: #FFFFFF;
+    font-weight: bold;
+    border-radius: 50%;
+    margin: 3px 5px 5px 0 !important;
+}
+
+.selected_container {
+    position: relative;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 300px;
+}
+
+.selected_container h3 {
+    margin: 0;
+    padding-left: 10px;
+    position: sticky;
+    top: 0;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    border-top: 1px solid black;
+    background-color: white;
+}
+
+.selected_list {
+    border: 1px solid black;
+    background-color: white;
+    overflow-y: auto;
+    overflow-x: auto;
+    flex-grow: 1;
+    white-space: nowrap;
+}
+
+#selectedList {
+    margin: 2px;
+    padding-left: 0;
+    list-style:none;
+}
+
+#selectedList li {
+    padding: 2px;
+}
+
+.selected_list li:hover {
+    background-color: #f0f0f0;
+}
+
+/*0313安藤修正*/
+.external_selected_container {
+    font-size: 12px;
+    position: relative;
+    margin: 10px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    height: 80px;
+    width: auto;
+    overflow-y: auto;
+    overflow-x: auto;
+    flex-grow: 1;
+    border: 1px solid black;
+    background-color: white;
+    display: none;
+}
+
+.external_selected_list {
+    background-color: white;
+    white-space: nowrap;
+    /*  リストアイテムを横並びにする  */
+    flex-grow: 1;
+    padding: 0;
+}
+
+#externalSelectedList {
+    margin: 2px;
+    padding-left: 30px;
+}
+
+#externalSelectedList li {
+    padding: 2px;
+}
+
+.complete_button {
+    position: absolute;
+    bottom: -56px;
+    right: 0px;
+    padding: 0 10px;
+    background-color: white;
+    color: black;
+    border: none;
+    cursor: pointer;
+}
+
+.complete_button:hover {
+    background-color: #ccc;
+}
+
+/* 参加者確認ドロップダウン関連のCSS 担当：髙橋 */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-button,
+.dl {
+    align-items: center;
+    width: auto;
+    /* 安藤修正2025012 */
+    margin: 3px 0px;
+    padding: .4em .8em;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 10.5px;
+    background-color: #99CCFF;
+    color: #003366;
+    border: none;
+    box-shadow: 1px 1px;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 100px;
+    max-width: 200px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 5000;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.dropdown-content label {
+    display: block;
+    padding: 2px 0;
+    margin: 0;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.dropdown-content input {
+    margin-right: 10px;
+}
+
+.show {
+    display: block;
+}
+
+.dropdown-button:hover {
+    background-color: #1579c0;
+}
+
+/* 読み込み中 */
+#loadAlert {
+    display: none;
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    /*  横方向で中央に配置 */
+    background-color: white;
+    padding: 30px;
+    border: 1px solid black;
+    z-index: 5005;
+    width: 21%;
+    height: auto;
+    min-height: 80px;
+    font-family: Arial, sans-serif;
+}
+
+/* 読み込み中 */
+#loadingMessage {
+    display: none;
+    font-size: 30px;
+    padding-left: auto;
+
+}
+
+/* オーバーレイ */
+#loadOverlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5005;
+    background-color: rgb(192, 192, 192, 0.562);
+}
+
+/* 注意書き */
+span.attention {
+    color: red;
+}

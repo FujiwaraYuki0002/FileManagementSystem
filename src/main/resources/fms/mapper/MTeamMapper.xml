@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- @author 安藤 優海 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fms.mapper.MTeamMapper">
+
+    <resultMap id="MTeamResult" type="fms.entity.MTeam">
+    <result column="team_id" property="teamId" />
+    <result column="team_name" property="teamName" />
+    <result column="version" property="version" />
+    </resultMap>
+
+    <select id="getMTeam" resultType="fms.entity.MTeam" resultMap="MTeamResult">
+        SELECT
+            team_id,
+            team_name,
+            version
+        FROM m_team
+            ORDER BY team_id
+            ASC
+    </select>
+
+    <delete id="deleteMTeam">
+        DELETE FROM m_team
+        WHERE team_id = #{teamId}
+    </delete>
+
+    <select id="getTeamName" resultType="fms.entity.MTeam">
+        SELECT
+            team_name
+        FROM m_team
+        WHERE team_id = #{teamId}
+    </select>
+
+    <select id="checkTeamName" resultType="Integer">
+        SELECT
+           COUNT(*)
+        FROM m_team
+        WHERE team_name = #{teamName}
+    </select>
+
+    <insert id="insertMTeam" parameterType="fms.entity.MTeam"
+    useGeneratedKeys="true" keyProperty="teamId">
+        INSERT INTO m_team(
+            team_name,
+            first_create_date,
+            last_modified_date,
+            last_modified_user
+        )
+        VALUES(
+            #{teamName},
+            #{firstCreateDate},
+            #{lastModifiedDate},
+            #{lastModifiedUser}
+        )
+    </insert>
+
+    <select id="mTeamInfo" resultType="fms.entity.MTeam" resultMap="MTeamResult">
+        SELECT
+            team_id,
+            team_name,
+            version
+        FROM m_team
+        WHERE team_id = #{teamId}
+    </select>
+
+    <update id="updateMTeam">
+        UPDATE m_team
+        SET
+            team_name = #{teamName},
+            last_modified_date = #{lastModifiedDate},
+            last_modified_user = #{lastModifiedUser},
+            version = #{version} + 1
+        WHERE team_id = #{teamId}
+            AND version = #{version}
+    </update>
+
+</mapper>

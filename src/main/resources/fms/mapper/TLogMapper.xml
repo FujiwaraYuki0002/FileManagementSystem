@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- @author 安藤 優海 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fms.mapper.TLogMapper">
+
+    <insert id="insertTLog" parameterType="fms.entity.TLog"
+    useGeneratedKeys="true" keyProperty="logId">
+        INSERT INTO t_log(
+            log_section,
+            operation_content,
+            message_code,
+            incident_class_name,
+            incident_date,
+            first_create_date,
+            last_modified_date,
+            last_modified_user
+        )
+        VALUES(
+            #{logSection},
+            #{operationContent},
+            #{messageCode},
+            #{incidentClassName},
+            #{incidentDate},
+            #{firstCreateDate},
+            #{lastModifiedDate},
+            #{lastModifiedUser}
+        )
+    </insert>
+</mapper>

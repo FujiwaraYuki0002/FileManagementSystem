@@ -1,0 +1,614 @@
+<!--/* @author 髙橋 真澄 */-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+
+<title th:if="${search != null}">ファイル検索</title>
+<title th:if="${index != null}">ファイル管理</title>
+
+
+<body>
+    <!--/* メイン */-->
+    <div class="container">
+
+        <!--/*完了メッセージ*/-->
+        <div th:include="~{/common/completeMessage}"></div>
+
+        <div class="title">
+            <h1 th:if="${search != null}">ファイル検索</h1>
+            <h1 th:if="${index != null}">ファイル管理</h1>
+        </div>
+        <form data-validate
+              th:action="@{${index != null ? '/file/indexSearchExecute' : '/file/searchExecute'}}"
+              method="post"
+              th:object = "${fileForm}"
+              id = "searchForm">
+            <div class="colmun">
+                <!--/* 左側 */-->
+                <div class="search_content_left">
+                    <div class="colmun_common">
+                        <div class="left_label join-button">
+                            <label>参加者</label>
+                        </div>
+                        <div class="right_textbox">
+                            <input type="button"
+                                   value="参加者を選択"
+                                   class="button"
+                                   id="showButton">
+                            <!--/* 選択者リスト */-->
+                            <div class="external_selected_container">
+                                <div class="external_selected_list">
+                                    <ul id="externalSelectedList">
+                                            <li th:if="${fileForm.userName != null && fileForm.userName != ''}"
+                                                th:each="file,st: ${fileForm.userId}"
+                                                th:id="${file}"
+                                                th:text="${fileForm.userName[st.index]}">
+                                            </li>
+                                        <!--/* 選択者リストはクリック時に動的に変更されます */-->
+                                    </ul>
+                                </div>
+                            </div>
+                            <!--/* モーダルのコンテンツ */-->
+                            <div id="myModal" class="modal">
+                                <div class="modal_content">
+                                    <div class="list_container">
+                                        <!-- ボタンコンテナ */-->
+                                        <div class="button_container">
+                                            <!--/* 参加者リストAとリストBの切り替えボタン */-->
+                                            <button class="toggle_button"
+                                                id="toggleTeamList"
+                                                disabled>所属</button>
+                                            <!--/* 初期状態でリストAボタンを非活性 */-->
+                                            <button class="toggle_button"
+                                                id="togglePostList">役職</button>
+                                        </div>
+                                        <!--/* 参加者リストA */-->
+                                        <div id="teamList"
+                                            class="participant_list active">
+                                            <h3>所属リスト</h3>
+                                            <ul>
+                                                <li th:each="team : ${teamList}"
+                                                    th:id="team+${team.teamId}"
+                                                    th:text="${team.teamName}">
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <!--/* リストB */-->
+                                        <div id="postList"
+                                            class="participant_list">
+                                            <h3>役職リスト</h3>
+                                            <ul>
+                                                <li th:each="post : ${postList}"
+                                                    th:id="post+${post.postId}"
+                                                    th:text="${post.postName}">
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div id="detail_container"
+                                        class="detail_container">
+                                        <div class="detail_list">
+                                            <ul id="detailList"
+                                                class="participant_detail_list">
+                                                <!--/* 詳細リストはクリック時に動的に変更される */-->
+                                            </ul>
+                                        </div>
+
+                                        <div class="selected_container">
+                                            <h3>選択者リスト</h3>
+                                            <div class="selected_list">
+                                                <ul id="selectedList">
+                                                    <!--/* 選択者リストはクリック時に動的に変更される */-->
+                                                </ul>
+                                            </div>
+                                            <input type="button"
+                                                   value="完了"
+                                                   class="complete_button"
+                                                   id="closeButton">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--/* ここまでがモーダルウィンドウ関連 */-->
+                        </div>
+                    </div>
+                </div>
+                <!--/* 右側 */-->
+                <div class="search_content_right">
+                    <div class="search_colmun_common colmun_common ">
+                        <div class="left_label">
+                            <label>日付</label>
+                            <label>題名</label>
+                            <label>ファイル名</label>
+                            <label>ワード検索</label>
+                        </div>
+                        <div class="right_textbox">
+                            <div class="datebox">
+                                <input type="date"
+                                       class="date"
+                                       name="dateFrom"
+                                       th:value="${fileForm.dateFrom != null && fileForm.dateFrom != ''
+                                        ? T(java.time.LocalDate).parse(fileForm.dateFrom,
+                                        T(java.time.format.DateTimeFormatter).ofPattern('yyyyMMdd')).format(
+                                        T(java.time.format.DateTimeFormatter).ofPattern('yyyy-MM-dd')) : ''}"
+                                        th:classappend = "${#fields.hasErrors('dateFrom') || #fields.hasErrors('fileId') ? 'errorTextbox' : ''}">
+                                <label>～</label>
+                                <input type="date"
+                                       class="date"
+                                       name="dateTo"
+                                       th:value="${fileForm.dateTo != null && fileForm.dateTo != ''
+                                        ? T(java.time.LocalDate).parse(fileForm.dateTo,
+                                        T(java.time.format.DateTimeFormatter).ofPattern('yyyyMMdd')).format(
+                                        T(java.time.format.DateTimeFormatter).ofPattern('yyyy-MM-dd')) : ''}"
+                                        th:classappend = "${#fields.hasErrors('dateFrom') || #fields.hasErrors('fileId') ? 'errorTextbox' : ''}">
+                            </div>
+                            <input type           = "text"
+                                   class          = "textbox"
+                                   name           = "title"
+                                   th:value       = "${fileForm.title}"
+                                   th:classappend = "${#fields.hasErrors('fileId') || #fields.hasErrors('title') ? 'errorTextbox' : ''}">
+                            <input type           = "text"
+                                   class          = "textbox"
+                                   name           = "fileName"
+                                   th:value       = "${fileForm.fileName}"
+                                   th:classappend = "${#fields.hasErrors('fileId') || #fields.hasErrors('fileName') ? 'errorTextbox' : ''}">
+                            <input type           = "text"
+                                   class          = "textbox"
+                                   name           = "findWord"
+                                   th:value       = "${fileForm.findWord}"
+                                   th:classappend = "${#fields.hasErrors('fileId') || #fields.hasErrors('findWord') ? 'errorTextbox' : ''}">
+                            <div class = "search_button_area">
+                                <input type       = "button"
+                                    value         = "クリア"
+                                    class         = "white colmun_button button"
+                                    onclick       = clearForm()>
+                                <input type       = "hidden"
+                                       name       = "userId"
+                                       id         = "selectedId">
+                                <input type       = "hidden"
+                                       name       = "userName"
+                                       id         = "selectedName">
+                                <input type       = "submit"
+                                       class      = "button colmun_button"
+                                       name       = "searchButton"
+                                       value      = "検索">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <span th:if="${fileList != null && fileList.size()>0}"
+              th:text="全+${fileList.size}+件"
+              style="text-align: right;"></span>
+
+            <table th:if="${fileList != null && fileList.size()>0}">
+                <thead th:if="${search != null}">
+                    <tr>
+                        <th class="noColumn">No</th>
+                        <th>題名</th>
+                        <th class="dateColumn">日付</th>
+                        <th class="joinUserColumn">参加者</th>
+                        <th class="fileColumn">ファイル1</th>
+                        <th class="fileColumn">ファイル2</th>
+                        <th class="fileColumn">ファイル3</th>
+                        <th class="dlColumn">DL</th>
+                    </tr>
+                </thead>
+
+                <thead th:if="${index != null}">
+                    <tr>
+                        <th class="noColumn">選択</th>
+                        <th>題名</th>
+                        <th class="dateColumn">日付</th>
+                        <th class="joinUserColumn">参加者</th>
+                        <th class="fileColumn">ファイル1</th>
+                        <th class="fileColumn">ファイル2</th>
+                        <th class="fileColumn">ファイル3</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableBody">
+
+                </tbody>
+            </table>
+
+        <div class="paging" th:if="${fileList != null && fileList.size()>0}">
+            <input type="submit" value="l<" id="firstPage" class="white button">
+            <input type="submit" value="<" id="prevPage" class="white button">
+            <input type="submit" value=">" id="nextPage" class="white button">
+            <input type="submit" value=">l" id="lastPage" class="white button">
+            <p><span id="pageNumber">1</span> /
+               <span id="totalPages">1</span>ページ</p>
+        </div>
+    </div>
+
+    <!--/* フッター */-->
+    <footer th:if="${search != null}"></footer>
+
+    <footer th:if="${index != null}">
+        <div class="right" >
+            <!--/*削除ボタン*/-->
+            <form class="display-inline"
+                  th:action="@{/file/delete}"
+                  method="post"
+                  onsubmit="return deletecheck()"
+                  th:if="${session.loginUser.role} == 1">
+                <input type="hidden"
+                       name="fileId"
+                       id="del">
+                <input type="hidden"
+                       name="version"
+                       id="delFileVersion">
+
+                <!--/* ☆ ページ番号*/-->
+                <input type="hidden"
+                       name="page"
+                       id="openPage">
+                <input type="submit"
+                       value="削除"
+                       name="delete"
+                       class="button"
+                       id = "deleteButton"
+                       disabled>
+            </form>
+            <!--/*更新ボタン*/-->
+            <form class="display-inline"
+                  th:action="@{/file/update}"
+                  method="post">
+                <input type="hidden"
+                       name="fileId"
+                       id="upd">
+                <input type="submit"
+                       value="編集"
+                       name="update"
+                       class="button"
+                       disabled>
+            </form>
+            <!--/*新規登録ボタン*/-->
+            <form class="display-inline"
+                  th:action="@{/file/insert}"
+                  method="post">
+                <input type="submit"
+                       value="新規作成"
+                       class="button">
+            </form>
+        </div>
+    </footer>
+
+    <!--/* オーバーレイ */-->
+    <div id="overlay"></div>
+
+    <!--/* エラーダイアログ */-->
+    <div id = "errorAlert"
+         th:object = "${fileForm}">
+        <div th:if = "${bindingResult != null}">
+                    <span th:each="error : ${bindingResult.fieldErrors}"
+                          th:text="${error.defaultMessage}"
+                          class = "errorMessage"></span>
+                </div>
+                <!-- dateFromのエラーメッセージ -->
+                <div th:if="${#fields.hasErrors('dateFrom')}">
+                    <span th:errors="*{dateFrom}" class="errorMessage"></span>
+                </div>
+
+                <!-- titleのエラーメッセージ -->
+                <div th:if="${#fields.hasErrors('title')}">
+                    <span th:errors="*{title}" class="errorMessage"></span>
+                </div>
+
+
+                <!-- fileNameのエラーメッセージ -->
+                <div th:if="${#fields.hasErrors('fileName')}">
+                    <span th:errors="*{fileName}" class="errorMessage"></span>
+                </div>
+
+                <!-- findWordのエラーメッセージ -->
+                <div th:if="${#fields.hasErrors('findWord')}">
+                    <span th:errors="*{findWord}" class="errorMessage"></span>
+                </div>
+
+                <!-- 検索欄未入力のエラーメッセージ(fileIdで代用) -->
+                <div th:if="${#fields.hasErrors('fileId')}">
+                    <span th:errors="*{fileId}" class="errorMessage"></span>
+                </div>
+
+                <!-- 検索結果0件のエラーメッセージ(versionで代用) -->
+                <div th:if="${#fields.hasErrors('version')}">
+                    <span th:errors="*{version}" class="errorMessage"></span>
+                </div>
+
+        <button type="button"
+                id="okButton"
+                onclick="closeAlert()">OK</button>
+    </div>
+
+    <script th:inline="javascript">
+
+        // Springで渡されたpostListをJSONとして変換してJavaScriptに埋め込む
+        const userList = /*[[${userList}]]*/"userList";
+        const teamContentsList = /*[[${teamList}]]*/"teamList";
+        const postContentsList = /*[[${postList}]]*/"postList";
+
+        const index = /*[[${index}]]*/null;
+        const search = /*[[${search}]]*/null;
+
+        // ☆ページの取得
+        const page = /*[[${page}]]*/null;
+
+        // 各リストの中身
+        var details = {};
+        // モーダルウィンドウ外にあるリストに追加する名前
+        var externalDetails = {};
+        //これを<li>のidに付与して受け渡す
+        var detailIds = {}
+
+        $('#deleteButton').on('click', function () {
+            $('#openPage').val($('#pageNumber').text());
+        });
+
+        // モーダルを開く
+        $('#showButton').on('click', function () {
+            modalOpen();
+        });
+
+        // 完了ボタンをクリックでモーダルを閉じる
+        $('#closeButton').on('click', function () {
+            modalClose();
+        });
+
+        // リスト1を表示する処理
+        $('#toggleTeamList').on('click', function () {
+            teamOpen();
+        });
+
+        // リスト2を表示する処理
+        $('#togglePostList').on('click', function () {
+            postOpen();
+        });
+
+        $(window).on('load', function () {
+            // エラーがあるかどうか
+            if ($('.errorMessage').length > 0) {
+                errorAlert();
+            }
+
+            modalSetUp();
+
+            // 初期表示の際はリストを非表示にするために判定を実行
+            updateExternalSelectedListVisibility();
+        });
+
+        function clearForm() {
+
+            // #searchForm 内のテキストフィールド、日付入力、ファイル入力、hidden フィールドを空にする
+            $('#searchForm input[type="text"], #searchForm input[type="date"], #searchForm input[type="hidden"]').val('');
+
+            // 参加者リストも #searchForm 内で空にする
+            $('#searchForm #externalSelectedList, #searchForm #selectedList, #searchForm #detailList').empty();
+
+            // 参加者リストの中身を確認
+            updateExternalSelectedListVisibility();
+        }
+
+        window.addEventListener('beforeunload', (e) => {
+            var formData = new FormData();
+
+            // sendBeaconを使用してリクエスト送信（POST）
+            //本番環境
+            //navigator.sendBeacon("/file_management_system/file/saveFileDelete", formData);
+            //ローカル環境
+            navigator.sendBeacon("/file/saveFileDelete", formData);
+        });
+
+        const fileList = /*[[${fileList}]]*/[];  // サーバーサイドから渡されたユーザーデータ
+
+        $(document).ready(function () {
+
+            // externalSelectedList内のすべての<li>要素を取得し、変数に格納
+            var externalListItems = $('#externalSelectedList li');
+
+            const selectedId = /*[[${fileForm.fileId}]]*/ null;
+
+            // 子要素を削除
+            $('#externalSelectedList').empty();  // または .html('') でリスト内を空にする
+
+            // 格納した変数でループ処理を行う
+            externalListItems.each(function () {
+                getDetailsByUserId($(this).attr('id'), $(this).text());
+            });
+
+            if (fileList != null && fileList.length > 0) {
+                const filePaginator = new Paginator(fileList, 10, updateTableBody, 'tableBody', selectedId);
+                filePaginator.updatePage(1);  // 初期ページを表示
+                filePaginator.addPaginationButtonListeners();  // ページネーションボタンにイベントリスナーを追加
+
+                // 更新画面から戻った場合に、選択したユーザーがいるページに移動
+
+                // ☆ページの指定があるならそれを参照してページを開く
+                if (selectedId !== null && page != null) {
+                    const selectedPage = page;
+                    currentPage = selectedPage;  // ユーザーが選択されていたページに移動
+                    filePaginator.updatePage(currentPage);  // 更新されたページを表示
+                } else if (selectedId !== null) {
+                    const fileIndex = fileList.findIndex(file => String(file.fileId) === String(selectedId));
+                    const selectedPage = Math.floor(fileIndex / 10) + 1;
+                    currentPage = selectedPage;  // ユーザーが選択されていたページに移動
+                    filePaginator.updatePage(currentPage);  // 更新されたページを表示
+                }
+
+
+                if (selectedId === null) return; // null の場合は処理しない
+
+                let radioButtons = document.getElementsByName("fileId");
+                let selectedIndex = -1;
+
+                selectRadioButton("option"+selectedId);
+
+                radioButtons.forEach(radio => {
+                    if (radio.value === selectedId.toString()) {
+                        radio.checked = true;
+                    }
+                });
+            }
+
+        });
+
+        // ドキュメント全体でクリックイベントをリッスンして、ドロップダウンを閉じる処理を追加
+        $(document).on('click', function (event) {
+            // クリックされた場所がドロップダウンボタンでない場合、すべてのドロップダウンを閉じる
+                dropdownCloseCheck(event);
+
+                // 管理画面ではないなら何もしない
+                if (index == null) {
+                    return;
+                }
+
+                // ラジオボタンが選択されている場合
+                if ($('input[name="fileId"]:checked').length > 0) {
+                    return; // 何もしない
+                }
+
+                if ($('input[name="delete"]').length) {
+                       $('input[name="delete"]').prop('disabled', true);
+                }
+
+                $('input[name="update"]').prop('disabled', true);
+        });
+
+        function submitPostForm(fileId, serialNumber) {
+            // フォームデータをFormDataオブジェクトとして作成
+            var formData = new FormData();
+            formData.append("fileId", fileId);
+            formData.append("serialNumber", serialNumber);
+
+            var xhr = new XMLHttpRequest();
+
+            // フォーム作成
+            var form = $("<form>").attr({
+                method: "POST",
+                action: "fileDownload" // サーバーのエンドポイント
+            });
+
+            form.append($("<input>").attr({
+                type: "hidden",
+                name: "fileId",
+                value: fileId
+            }));
+
+            form.append($("<input>").attr({
+                type: "hidden",
+                name: "serialNumber",
+                value: serialNumber
+            }));
+
+            // フォームを送信
+            $("body").append(form);
+            // フォーム送信
+            form.submit();
+        }
+
+        function updateTableBody(tableBodyId, data, currentPage, itemsPerPage = 10) {
+            const $tableBody = $('#' + tableBodyId);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = Math.min(startIdx + itemsPerPage, data.length);
+
+            // 既存の行をクリア
+            $tableBody.empty();
+
+            // 現在のページに対応するデータを追加
+            for (let i = startIdx; i < endIdx; i++) {
+                const item = data[i];
+                const tr = $('<tr></tr>').get(0);
+
+                if(search != null){
+
+
+                // `item` を元に動的に生成する HTML
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td class="titleColumn" title="${item.title}">
+                        <span class="titleEllipsis">${item.title}</span>
+                    </td>
+                    <td><span>${item.date}</span></td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="dropdown-button">参加者を確認</button>
+                            <div class="dropdown-content">
+                                ${Array.isArray(item.muserList) ? item.muserList.map(user => `<label>${user.userName}</label>`).join('') : 'なし'}
+                            </div>
+                        </div>
+                    </td>
+                    ${[0, 1, 2].map(index => {
+                        const file = (Array.isArray(item.tfileList) && item.tfileList.length > index) ? item.tfileList[index] : null;
+                        return `
+                            <td class="fileColumn" title="${file ? file.fileName : 'なし'}">
+                                ${file ? `<a href="#" onclick="submitPostForm(${item.fileId},${index + 1}); return false;">
+                                    <span class="ellipsis">${file.fileName}</span>
+                                </a>` : 'なし'}
+                            </td>
+                        `;
+                    }).join('')}
+                    <td>
+                        <input type="submit" value="DL" class="dl button" onclick="submitPostForm(${item.fileId})" id="${item.fileId}" />
+                    </td>
+                `;
+
+                // '参加者を確認' ボタンにクリックイベントを追加
+                tr.querySelector('.dropdown-button').addEventListener('click', function (event) {
+                    dropdownOpen(tr.querySelector('.dropdown-button'), event);  // dropdownOpen関数を呼び出す
+                });
+
+                tableBody.appendChild(tr);
+                }
+
+                /* 管理画面の初期表示 */
+                if(index != null){
+
+                    tr.onclick = () => {
+                        selectRadioButton(`option${item.fileId}`);
+                    };
+
+                    // `item` を元に動的に生成する HTML
+                    tr.innerHTML = `
+                                    <td><input type="radio" name="fileId" value="${item.fileId}" id="option${item.fileId}"></td>
+                                    <td class="titleColumn" title="${item.title}">
+                                        <span class="titleEllipsis">${item.title}</span>
+                                    </td>
+                                    <td><span>${item.date}</span></td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="dropdown-button">参加者を確認</button>
+                                            <div class="dropdown-content">
+                                                ${Array.isArray(item.muserList) ? item.muserList.map(user => `<label>${user.userName}</label>`).join('') : 'なし'}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    ${[0, 1, 2].map(index => {
+                                        const file = (Array.isArray(item.tfileList) && item.tfileList.length > index) ? item.tfileList[index] : null;
+                                        return `
+                                            <td class="fileColumn" title="${file ? file.fileName : 'なし'}">
+                                                ${file ? `<span class="indexFileEllipsis">${file.fileName}</span>
+                                                </a>` : 'なし'}
+                                            </td>
+                                        `;
+                                    }).join('')}
+                                    <input type="hidden" name="hiddenVersion" id="${item.fileId}Version" value="${item.version}">
+                                `;
+
+                    // '参加者を確認' ボタンにクリックイベントを追加
+                    tr.querySelector('.dropdown-button').addEventListener('click', function (event) {
+                        dropdownOpen(tr.querySelector('.dropdown-button'), event);  // dropdownOpen関数を呼び出す
+                    });
+
+                    tableBody.appendChild(tr);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

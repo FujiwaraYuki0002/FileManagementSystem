@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- @author 安藤 優海 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fms.mapper.MPostMapper">
+
+    <resultMap id="MPostResult" type="fms.entity.MPost">
+    <id column="post_id" property="postId" />
+    <result column="post_name" property="postName" />
+    <result column="version" property="version" />
+    </resultMap>
+
+    <select id="getMPost" resultType="fms.entity.MPost" resultMap="MPostResult">
+        SELECT
+            post_id,
+            post_name,
+            version
+        FROM m_post
+            ORDER BY post_id
+            ASC
+    </select>
+
+    <delete id="deleteMPost">
+        DELETE FROM m_post
+        WHERE post_id = #{postId}
+    </delete>
+
+    <select id="getPostName" resultType="fms.entity.MPost">
+        SELECT
+            post_name
+        FROM m_post
+        WHERE post_id = #{postId}
+    </select>
+
+    <select id="checkPostName" resultType="Integer">
+        SELECT
+           COUNT(*)
+        FROM m_post
+        WHERE post_name = #{postName}
+    </select>
+
+    <insert id="insertMPost" parameterType="fms.entity.MPost"
+    useGeneratedKeys="true" keyProperty="postId">
+        INSERT INTO m_post(
+            post_name,
+            first_create_date,
+            last_modified_date,
+            last_modified_user
+        )
+        VALUES(
+            #{postName},
+            #{firstCreateDate},
+            #{lastModifiedDate},
+            #{lastModifiedUser}
+        )
+    </insert>
+
+    <select id="mPostInfo" resultType="fms.entity.MPost" resultMap="MPostResult">
+        SELECT
+            post_id,
+            post_name,
+            version
+        FROM m_post
+        WHERE post_id = #{postId}
+    </select>
+
+    <update id="updateMPost">
+        UPDATE m_post
+        SET
+            post_name = #{postName},
+            last_modified_date = #{lastModifiedDate},
+            last_modified_user = #{lastModifiedUser},
+            version = #{version} + 1
+        WHERE post_id = #{postId}
+            AND version = #{version}
+    </update>
+
+</mapper>

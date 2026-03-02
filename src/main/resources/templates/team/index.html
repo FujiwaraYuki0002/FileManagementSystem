@@ -1,0 +1,204 @@
+<!--/* @author 安藤 優海  */-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+
+<title>所属管理</title>
+
+<body th:object="${teamForm}">
+    <!--/*メイン*/-->
+    <div class="container">
+
+        <div class="title">
+            <h1>所属管理</h1>
+        </div>
+
+        <table class="team-table">
+            <thead>
+                <tr>
+                    <th>選択</th>
+                    <th>所属ID</th>
+                    <th>所属名</th>
+                </tr>
+            </thead>
+
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+        <div class="paging team">
+            <input type="submit" value="l<" id="firstPage" class="white button">
+            <input type="submit" value="<" id="prevPage" class="white button">
+            <input type="submit" value=">" id="nextPage" class="white button">
+            <input type="submit" value=">l" id="lastPage" class="white button">
+            <p><span id="pageNumber">1</span> / <span
+                id="totalPages">1</span>ページ</p>
+        </div>
+    </div>
+    <!--/*フッター*/-->
+    <footer>
+        <div class="right">
+            <!--/*削除ボタン*/-->
+            <form class="display-inline"
+                  th:action="@{/team/delete}"
+                  method="post"
+                  onsubmit="return deletecheck()">
+                <input type="hidden"
+                       name="teamId"
+                       id="del">
+                <!--/* ☆ ページ番号*/-->
+                <input type="hidden"
+                       name="page"
+                       id="openPage">
+                <input type="submit"
+                       value="削除"
+                       name="delete"
+                       class="button"
+                       id = "deleteButton"
+                       disabled >
+            </form>
+            <!--/*更新ボタン*/-->
+            <form class="display-inline"
+                  th:action="@{/team/update}"
+                  method="post">
+                <input type="hidden"
+                       name="teamId"
+                       id="upd">
+                <input type="submit"
+                       value="編集"
+                       name="update"
+                       class="button"
+                       disabled>
+            </form>
+            <!--/*新規登録ボタン*/-->
+            <form class="display-inline"
+                  th:action="@{/team/insert}"
+                  method="post">
+                <input type="submit"
+                       value="新規登録"
+                       class="button">
+            </form>
+        </div>
+    </footer>
+    <!--/*オーバーレイ */-->
+    <div id="overlay"></div>
+
+    <!--/*エラーダイアログ */-->
+    <div id="errorAlert" th:object="${teamForm}">
+       <div th:each="error:${#fields.detailedErrors()}">
+            <span th:text="${error.message}" class="errorMessage"></span>
+       </div>
+       <button id="okButton" onclick="closeAlert('')">OK</button>
+     </div>
+
+    <script>
+        // 初期表示の処理
+              jQuery(function ($) {
+                  // エラーがあるかどうか
+                  if ($('.errorMessage').length > 0) {
+                      errorAlert();
+                  }
+              });
+    </script>
+
+
+        <script th:inline="javascript">
+            $(document).ready(() => {
+                // サーバーサイドから渡された所属データ（Thymeleafで埋め込む）
+                const teams = /*[[${mTeamList}]]*/[];  // サーバーサイドから渡された所属データ
+                const selectedId = /*[[${teamForm.teamId}]]*/ null;
+
+                // ☆ページの取得
+                const page = /*[[${page}]]*/null;
+
+                $('#deleteButton').on('click', function () {
+                    $('#openPage').val($('#pageNumber').text());
+                });
+
+                if (teams.length === 0) {
+                    console.warn("No teams found.");
+                } else {
+                    // Paginatorをインスタンス化してページング処理を開始
+                    const teamPaginator = new Paginator(teams, 10, updateTableBody, 'tableBody',selectedId);
+                    teamPaginator.updatePage(1);  // 初期ページを表示
+
+                    // ページネーションボタンにイベントリスナーを追加（共通部品で定義されたメソッドを呼び出し）
+                    teamPaginator.addPaginationButtonListeners();
+
+
+                    // 更新画面から戻った場合に、選択した所属がいるページに移動
+                    // ☆ページの指定があるならそれを参照してページを開く
+                    if (selectedId !== null && page != null) {
+                        const selectedPage = page;
+                        currentPage = selectedPage;  // ユーザーが選択されていたページに移動
+                        teamPaginator.updatePage(currentPage);  // 更新されたページを表示
+                    } else if (selectedId !== null) {
+                        const teamIndex = teams.findIndex(team => team.teamId === selectedId);
+                            const selectedPage = Math.floor(teamIndex / 10) + 1;
+                            currentPage = selectedPage;  // 所属が選択されていたページに移動
+                            teamPaginator.updatePage(currentPage);  // 更新されたページを表示
+                    }
+                     if (selectedId === null) return; // null の場合は処理しない
+
+                     let radioButtons = document.getElementsByName("teamId");
+                     let selectedIndex = -1;
+
+                     selectRadioButton("option"+selectedId);
+
+                     radioButtons.forEach(radio => {
+                         if (radio.value === selectedId.toString()) {
+                             radio.checked = true;
+                         }
+                     });
+                }
+            });
+
+            // ドキュメント全体でクリックイベントをリッスンして、ドロップダウンを閉じる処理を追加
+            $(document).on('click', function (event) {
+
+                    // ラジオボタンが選択されている場合
+                    if ($('input[name="teamId"]:checked').length > 0) {
+                        return; // 何もしない
+                    }
+                    $('input[name="delete"]').prop('disabled', true);
+                    $('input[name="update"]').prop('disabled', true);
+            });
+
+            // テーブルの行を動的に追加する関数
+            function updateTableBody(tableBodyId, data, currentPage, itemsPerPage = 10) {
+                const $tableBody = $('#' + tableBodyId);
+                const startIdx = (currentPage - 1) * itemsPerPage;
+                const endIdx = Math.min(startIdx + itemsPerPage, data.length);
+
+                // 既存の行をクリア
+                 $tableBody.empty();
+
+                // 現在のページに対応するデータを追加
+                for (let i = startIdx; i < endIdx; i++) {
+                    const item = data[i];
+                    const tr = $('<tr></tr>').get(0);
+
+                    // クリックイベントの追加
+                    tr.onclick = () => {
+                        selectRadioButton(`option${item.teamId}`);
+                    };
+                    tr.innerHTML = `
+                        <td><input type="radio"
+                            name="teamId"
+                            value="${item.teamId}"
+                            id="option${item.teamId}"
+                            >
+                        </td>
+                        <td>${item.teamId}</td>
+                        <td name="teamName"
+                            value="${item.teamName}"
+                            class="teamNameColumn">
+                            ${item.teamName}
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                }
+             }
+        </script>
+</body>
+
+</html>

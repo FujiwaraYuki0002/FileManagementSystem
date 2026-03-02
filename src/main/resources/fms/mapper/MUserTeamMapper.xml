@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- @author 大塚 月愛 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fms.mapper.MUserTeamMapper">
+
+    <resultMap id="teamIdResultMap" type="java.lang.Integer">
+        <id property="teamId" column="team_id" />
+    </resultMap>
+
+    <select id="getMUserTeam" resultMap="teamIdResultMap">
+        SELECT
+            m_team.team_id
+        FROM m_user_team
+        JOIN m_team ON m_user_team.team_id = m_team.team_id
+        WHERE m_user_team.user_id = #{userId}
+    </select>
+
+    <insert id="insertMUserTeam" parameterType="fms.entity.MUserTeam"
+    useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO m_user_team(
+            user_id,
+            team_id,
+            first_create_date,
+            last_modified_date,
+            last_modified_user
+        )
+        VALUES(
+            #{userId},
+            #{teamId},
+            #{firstCreateDate},
+            #{lastModifiedDate},
+            #{lastModifiedUser}
+        )
+    </insert>
+
+    <delete id="deleteMUserTeam" parameterType="map" >
+        DELETE
+        FROM m_user_team
+        WHERE user_id = #{userId}
+        <if test="teamId != null and teamId.size() > 0">
+        AND team_id IN
+        <foreach item="item" collection="teamId" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </if>
+    </delete>
+
+</mapper>

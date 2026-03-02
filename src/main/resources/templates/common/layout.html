@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title,body)">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link th:href="@{/css/common.css}" rel="stylesheet" />
+    <link th:href="@{/css/form.css}" rel="stylesheet" />
+    <link th:href="@{/css/error.css}" rel="stylesheet" />
+    <link th:href="@{/css/table.css}" rel="stylesheet" />
+<!--    <link rel="icon" href="data:,">-->
+	<link rel="icon" th:href="@{/icon.png}">
+
+    <script th:src="@{/js/main.js}"></script>
+    <script th:src="@{/js/paging.js}"></script>
+    <script th:src="@{/js/jquery-3.7.1.js}"></script>
+    <script th:src="@{/js/jszip.min.js}"></script>
+<!--    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>-->
+
+    <title th:replace="${title}"></title>
+</head>
+
+<header>
+    <div th:replace="~{/common/header :: layout-header}"></div>
+</header>
+<div th:replace="~{/common/menu :: layout-menu}"></div>
+
+<body>
+    <div id="main" th:replace="${body}"></div>
+</body>
+
+</html>
