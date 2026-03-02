@@ -2,10 +2,6 @@ package fms.ErrorHandler;
 
 import java.util.Locale;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
@@ -14,6 +10,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import fms.domain.LogDomain;
 import fms.domain.MessageDomain;
 import fms.util.LogUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * セッションタイムアウト確認用インターセプター
@@ -69,7 +68,10 @@ public class SessionTimeoutInterceptor implements HandlerInterceptor {
             request.getSession().setAttribute("exceptionErrorMessage", exceptionErrorMessage);
 
             // ログイン画面にリダイレクト
+            //本番
             response.sendRedirect("/file_management_system/");
+            //ローカル
+            response.sendRedirect("/");
 
             return false;
 
