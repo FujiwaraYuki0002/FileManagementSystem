@@ -73,8 +73,9 @@ public class PostController {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "役職管理", "POST_INDEX",
                 mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // ☆更新の戻るボタンからの遷移
+        // 更新の戻るボタンからの遷移
         Integer postId = (Integer) httpSession.getAttribute("postId");
+
         postForm.setPostId(postId);
 
         // 役職リストを取得
@@ -82,6 +83,7 @@ public class PostController {
 
         model.addAttribute("mPostList", mPostList);
 
+        // 役職管理画面へ遷移
         return "post/index";
     }
 
@@ -118,6 +120,7 @@ public class PostController {
 
             model.addAttribute("mPostList", mPostList);
 
+            // 役職管理画面へ遷移
             return "post/index";
         }
 
@@ -132,6 +135,7 @@ public class PostController {
 
             model.addAttribute("mPostList", mPostList);
 
+            // 役職管理画面へ遷移
             return "post/index";
         }
 
@@ -142,11 +146,19 @@ public class PostController {
         String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0003, new String[] { "役職" },
                 Locale.JAPAN);
 
-        redirectAttributes.addFlashAttribute("completeMessage", message);
+        model.addAttribute("completeMessage", message);
+
+        // 役職リスト取得
+        List<MPost> mPostList = postService.getMPostList();
+
+        model.addAttribute("mPostList", mPostList);
+
+        model.addAttribute("insert", true); // 更新フラグ
 
         // 元のページ番号をリダイレクトで渡す
-        redirectAttributes.addFlashAttribute("page", page);
+        model.addAttribute("page", page);
 
-        return "redirect:/post/index";
+        // 役職管理画面へ遷移
+        return "post/index";
     }
 }

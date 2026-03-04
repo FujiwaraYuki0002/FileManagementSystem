@@ -98,6 +98,7 @@ public class PasswordController {
      * @param bindingResult エラーチェック
      * @param httpSession セッション
      * @param redirectAttributes リダイレクト
+     * @param mode モデル
      *
      * @return 正常:ファイル検索画面 異常:パスワード変更画面
      */
@@ -107,7 +108,7 @@ public class PasswordController {
 
         // 操作ログ登録
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "パスワード変更", "CHANGE_PASSWORD",
-                passwordForm.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
+                mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
 
         // IDとパスワードの照合結果、新しいパスワードと確認用のパスワードの照合結果を取得
         boolean isIdAndPasswordCheck = passwordService.idAndPasswordCheck(passwordForm);
@@ -118,11 +119,12 @@ public class PasswordController {
 
             // パスワードが正しくなければエラーを追加
             bindingResult.addError(new FieldError(bindingResult.getObjectName(), "password",
-                    messageSource.getMessage("ERROR0004", new String[] { "パスワード" }, Locale.JAPAN)));
+                    messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0004, new String[] { "パスワード" },
+                            Locale.JAPAN)));
 
             // エラーログ登録
             logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "パスワード照合エラー", MessageDomain.VALID_KEY_ERROR0004,
-                    passwordForm.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
+                    mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
         }
 
         // 新しいパスワードと確認用パスワードを照合がfalseの場合
@@ -130,11 +132,12 @@ public class PasswordController {
 
             // 新しいパスワードと確認用パスワードが一致しなければエラーメッセージを追加
             bindingResult.addError(new FieldError(bindingResult.getObjectName(), "newPassword",
-                    messageSource.getMessage("ERROR0012", new String[] { "確認用パスワード" }, Locale.JAPAN)));
+                    messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0012, new String[] { "確認用パスワード" },
+                            Locale.JAPAN)));
 
             // エラーログ登録
-            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "パスワード照合エラー", MessageDomain.VALID_KEY_ERROR0012,
-                    passwordForm.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
+            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "新しいパスワード照合エラー", MessageDomain.VALID_KEY_ERROR0012,
+                    mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
         }
 
         // エラーがある場合
@@ -162,7 +165,7 @@ public class PasswordController {
 
         model.addAttribute("completeMessage", message);
 
-        // ファイル検索画面に遷移
+        // パスワード変更画面に遷移
         return "password/changePassword";
     }
 }

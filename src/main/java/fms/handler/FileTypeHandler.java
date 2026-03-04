@@ -39,7 +39,8 @@ public class FileTypeHandler extends BaseTypeHandler<MultipartFile> {
      * @throws SQLException SQL例外
      */
     @Override
-    public void setNonNullParameter(PreparedStatement ps, int i, MultipartFile parameter, JdbcType jdbcType)
+    public void setNonNullParameter(PreparedStatement ps, int i,
+            MultipartFile parameter, JdbcType jdbcType)
             throws SQLException {
         try {
             byte[] fileBytes = getFileBytes(parameter); // ファイルデータを取得
@@ -62,7 +63,8 @@ public class FileTypeHandler extends BaseTypeHandler<MultipartFile> {
      * @throws SQLException SQL例外
      */
     @Override
-    public MultipartFile getNullableResult(ResultSet rs, String columnName) throws SQLException {
+    public MultipartFile getNullableResult(ResultSet rs, String columnName)
+            throws SQLException {
         byte[] bytes = rs.getBytes(columnName);
         return createMultipartFile(bytes);
     }
@@ -79,7 +81,8 @@ public class FileTypeHandler extends BaseTypeHandler<MultipartFile> {
      * @throws SQLException SQL例外
      */
     @Override
-    public MultipartFile getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
+    public MultipartFile getNullableResult(ResultSet rs, int columnIndex)
+            throws SQLException {
         byte[] bytes = rs.getBytes(columnIndex);
         return createMultipartFile(bytes);
     }
@@ -96,7 +99,8 @@ public class FileTypeHandler extends BaseTypeHandler<MultipartFile> {
      * @throws SQLException SQL例外
      */
     @Override
-    public MultipartFile getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
+    public MultipartFile getNullableResult(CallableStatement cs,
+            int columnIndex) throws SQLException {
         byte[] bytes = cs.getBytes(columnIndex);
         return createMultipartFile(bytes);
     }
@@ -147,7 +151,8 @@ public class FileTypeHandler extends BaseTypeHandler<MultipartFile> {
      *
      * @throws IOException 入出力例外
      */
-    private byte[] convertMultipartFileToUTF8Bytes(MultipartFile file) throws IOException {
+    private byte[] convertMultipartFileToUTF8Bytes(MultipartFile file)
+            throws IOException {
         InputStream inputStream = null;
         BufferedReader reader = null;
         BufferedWriter writer = null;
@@ -158,9 +163,11 @@ public class FileTypeHandler extends BaseTypeHandler<MultipartFile> {
             byteArrayOutputStream = new ByteArrayOutputStream();
 
             // ファイルの内容をUTF-8で読み込む
-            reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            reader = new BufferedReader(
+                    new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             // UTF-8で書き出し
-            writer = new BufferedWriter(new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8));
+            writer = new BufferedWriter(new OutputStreamWriter(
+                    byteArrayOutputStream, StandardCharsets.UTF_8));
 
             String line;
             while ((line = reader.readLine()) != null) {
@@ -238,7 +245,8 @@ public class FileTypeHandler extends BaseTypeHandler<MultipartFile> {
         }
 
         @Override
-        public void transferTo(File dest) throws IOException, IllegalStateException {
+        public void transferTo(File dest)
+                throws IOException, IllegalStateException {
             try (OutputStream os = new FileOutputStream(dest)) {
                 os.write(content);
             }

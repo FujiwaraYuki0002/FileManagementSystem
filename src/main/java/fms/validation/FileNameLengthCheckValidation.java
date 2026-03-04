@@ -41,7 +41,7 @@ public class FileNameLengthCheckValidation implements ConstraintValidator<FileNa
         // ファイル名長さが100文字より大きならエラー
         for (String fileName : value.getFileName()) {
             if (fileName.length() > 100) {
-                String errorMessage = messageSource.getMessage("{" + MessageDomain.VALID_KEY_ERROR0018 + "}", null,
+                String errorMessage = messageSource.getMessage("{" + MessageDomain.VALID_KEY_ERROR0017 + "}", null,
                         context.getDefaultConstraintMessageTemplate(), Locale.getDefault());
                 context.disableDefaultConstraintViolation();
                 context.buildConstraintViolationWithTemplate(errorMessage)

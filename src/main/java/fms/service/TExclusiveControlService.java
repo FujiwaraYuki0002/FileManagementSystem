@@ -1,8 +1,10 @@
 package fms.service;
 
+import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Locale;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -22,7 +24,6 @@ import fms.form.UserForm;
 import fms.mapper.TExclusiveControlMapper;
 import fms.util.DateUtil;
 import fms.util.LogUtil;
-import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * 排他ロックサービス
@@ -61,12 +62,10 @@ public class TExclusiveControlService {
      * PCホスト名取得
      *
      * @author 安藤 優海
-
+    
      * @return PCホスト名
      */
     public String getHostName() {
-
-        // IPアドレス取得
         String ip = request.getHeader("X-Forwarded-For");
 
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
@@ -79,21 +78,16 @@ public class TExclusiveControlService {
             ip = request.getRemoteAddr();
         }
 
-        String hostName = "Unknown Host";
-
         try {
-            // 取得したIPアドレスを元にホスト名取得
+            // まず Java の InetAddress で取得を試みる
             InetAddress inetAddress = InetAddress.getByName(ip);
+            String hostName = inetAddress.getCanonicalHostName();
+            return hostName;
 
-            hostName = inetAddress.getHostName();
-
-        } catch (UnknownHostException e) {
-
-            // ホスト名取得できない場合は"Unknown Host"を返す
+        } catch (IOException e) {
             return "Unknown Host";
         }
 
-        return hostName;
     }
 
     /**
@@ -106,8 +100,7 @@ public class TExclusiveControlService {
      *
      * @return ロックの有無
      */
-    public boolean checkUpdateExclusiveControl(Object object,
-            BindingResult bindingResult) {
+    public boolean checkUpdateExclusiveControl(Object object, BindingResult bindingResult) {
 
         TExclusiveControl tEcontrol = null; //ロックがあるかどうか
         String screenId = null;
@@ -166,24 +159,26 @@ public class TExclusiveControlService {
 
         // ホスト名を取得する
         TExclusiveControl tExclusive = new TExclusiveControl();
-        try {
 
-            //本番
-            //tExclusive.setHostName(getHostName());
+        // ※本番
+        tExclusive.setHostName(getHostName());
 
-            //ローカル
-            tExclusive.setHostName(InetAddress.getLocalHost().getHostName());
-
-            // ホスト名が取得できなかった時
-        } catch (Exception e) {
-
-            // エラーログ登録
-            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "ホスト名取得不可エラー", "UnknownHostException", mUser.getUserId(),
-                    Thread.currentThread().getStackTrace()[1].getClassName());
-        }
+        // ※開発環境用　↑とコメントアウトで切り替えて使用してください
+        //        try {
+        //            tExclusive.setHostName(InetAddress.getLocalHost().getHostName());
+        //
+        //            // ホスト名が取得できなかった時
+        //        } catch (Exception e) {
+        //
+        //            // エラーログ登録
+        //            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "ホスト名取得不可エラー", "UnknownHostException", mUser.getUserId(),
+        //                    Thread.currentThread().getStackTrace()[1].getClassName());
+        //        }
 
         // 排他ロックなしの場合
-        if (tEcontrol == null) {
+        if (tEcontrol == null)
+
+        {
 
             tExclusive.setScreenId(screenId);
             if (fileId != null) {
@@ -218,9 +213,8 @@ public class TExclusiveControlService {
         // 排他ロックがかかっている場合（エラー）
 
         // リザルトに排他ロックエラーを登録
-        bindingResult.addError(
-                new FieldError(bindingResult.getObjectName(), "control", messageSource.getMessage("ERROR0013",
-                        new String[] { tEcontrol.getHostName() }, Locale.JAPAN)));
+        bindingResult.addError(new FieldError(bindingResult.getObjectName(), "control", messageSource.getMessage(
+                MessageDomain.VALID_KEY_ERROR0013, new String[] { tEcontrol.getHostName() }, Locale.JAPAN)));
 
         //エラーログ登録
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "排他ロックエラー", MessageDomain.VALID_KEY_ERROR0013,
@@ -235,28 +229,29 @@ public class TExclusiveControlService {
      *
      * @author 安藤 優海
      *
-     * @return 削除可能かどうか
+     * @return 排他ロック削除可能かどうか
      */
 
     public boolean isTExclusiveControlDelete() {
         boolean isPostControlDelete = false;
-        try {
-            // 本番
-            //isPostControlDelete = tExclusiveControlMapper
-            //       .deleteTExclusiveControl(getHostName());
-            // ローカル
-            isPostControlDelete = tExclusiveControlMapper
-                    .deleteTExclusiveControl(InetAddress.getLocalHost().getHostName());
 
-            // ホスト名が取得できなかった時
-        } catch (Exception e) {
+        // ※本番
+        isPostControlDelete = tExclusiveControlMapper.deleteTExclusiveControl(getHostName());
 
-            // エラーログ登録
-            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "ホスト名取得不可エラー", "UnknownHostException", mUser.getUserId(),
-                    Thread.currentThread().getStackTrace()[1].getClassName());
-        }
+        // ※開発環境用　↑とコメントアウトで切り替えて使用してください
+        //        try {
+        //            isPostControlDelete = tExclusiveControlMapper
+        //                    .deleteTExclusiveControl(InetAddress.getLocalHost().getHostName());
+        //            // ホスト名が取得できなかった時
+        //        } catch (UnknownHostException e) {
+        //
+        //            // エラーログ登録
+        //            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "ホスト名取得不可エラー", "UnknownHostException", mUser.getUserId(),
+        //                    Thread.currentThread().getStackTrace()[1].getClassName());
+        //        }
 
         return isPostControlDelete;
+
     }
 
     /**
@@ -298,10 +293,11 @@ public class TExclusiveControlService {
         //排他ロックがかかっている場合はエラーを登録
         if (tEcontrol != null) {
 
-            //リザルトに排他ロックエラーを登録
+            // リザルトに排他ロックエラーを登録
             bindingResult.addError(
-                    new FieldError(bindingResult.getObjectName(), "control", messageSource.getMessage("ERROR0013",
-                            new String[] { tEcontrol.getHostName() }, Locale.JAPAN)));
+                    new FieldError(bindingResult.getObjectName(), "control", messageSource.getMessage(
+                            MessageDomain.VALID_KEY_ERROR0013, new String[] { tEcontrol.getHostName() },
+                            Locale.JAPAN)));
 
             //エラーログ登録
             logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "排他ロックエラー", MessageDomain.VALID_KEY_ERROR0013,

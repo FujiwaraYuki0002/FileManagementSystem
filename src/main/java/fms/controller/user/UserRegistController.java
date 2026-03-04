@@ -16,7 +16,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import fms.domain.LogDomain;
 import fms.domain.MessageDomain;
@@ -147,11 +146,10 @@ public class UserRegistController {
      */
     @RequestMapping(path = "/insert", params = "insertButton", method = RequestMethod.POST)
     public String mUserInsertExecute(
-            @Valid @ModelAttribute UserForm userForm, BindingResult bindingResult, Model model,
-            RedirectAttributes redirectAttributes) {
+            @Valid @ModelAttribute UserForm userForm, BindingResult bindingResult, Model model) {
 
         // 操作ログ登録
-        logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ユーザー登録", MessageDomain.PROP_KEY_MESSAGE0002, mUser.getUserId(),
+        logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ユーザー登録", MessageDomain.PROP_KEY_MESSAGE0001, mUser.getUserId(),
                 Thread.currentThread().getStackTrace()[1].getClassName());
 
         // 所属リストを取得
@@ -187,9 +185,19 @@ public class UserRegistController {
         String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0001, new String[] { "ユーザー" },
                 Locale.JAPAN);
 
-        redirectAttributes.addFlashAttribute("completeMessage", message);
+        // ユーザーが所属している所属リストを取得
+        List<Integer> selectedTeamIds = new ArrayList<>();
 
-        return "redirect:/user/index";
+        for (Integer teamId : userForm.getTeamId()) {
+            selectedTeamIds.add(teamId);
+        }
+
+        model.addAttribute("mTeamList", mTeamList);
+        model.addAttribute("selectedTeamIds", selectedTeamIds);
+        model.addAttribute("completeMessage", message);
+        model.addAttribute("insert", true); // 更新フラグ
+
+        return "user/userRegist";
     }
 
     /**
@@ -238,7 +246,7 @@ public class UserRegistController {
     @RequestMapping(path = "/update", params = "updateButton", method = RequestMethod.POST)
     public String mUserUpdateExecute(
             @Valid @ModelAttribute UserForm userForm, BindingResult bindingResult, Model model,
-            RedirectAttributes redirectAttributes, HttpSession httpSession) {
+            HttpSession httpSession) {
 
         // 操作ログ登録
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ユーザー更新", MessageDomain.PROP_KEY_MESSAGE0002, mUser.getUserId(),
@@ -287,8 +295,20 @@ public class UserRegistController {
         String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0002, new String[] { "ユーザー" },
                 Locale.JAPAN);
 
-        redirectAttributes.addFlashAttribute("completeMessage", message);
+        // ユーザーが所属している所属リストを取得
+        List<Integer> selectedTeamIds = new ArrayList<>();
 
-        return "redirect:/user/index";
+        for (Integer teamId : userForm.getTeamId()) {
+            selectedTeamIds.add(teamId);
+        }
+
+        model.addAttribute("mTeamList", mTeamList);
+        model.addAttribute("mPostList", mPostList);
+        model.addAttribute("selectedTeamIds", selectedTeamIds);
+
+        model.addAttribute("completeMessage", message);
+        model.addAttribute("update", true); // 更新フラグ
+
+        return "user/userRegist";
     }
 }

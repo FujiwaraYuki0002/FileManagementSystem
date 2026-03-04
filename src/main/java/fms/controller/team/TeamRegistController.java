@@ -71,16 +71,17 @@ public class TeamRegistController {
     public String mTeamUpdate(@Valid @ModelAttribute TeamForm teamForm, BindingResult bindingResult, Model model,
             HttpSession httpSession) {
 
+        // 所属リストを取得
+        List<MTeam> mTeamList = teamService.getMTeamList();
+
+        model.addAttribute("mTeamList", mTeamList);
+
         // 登録の場合
         if (teamForm.getTeamId() == null) {
 
-            // 所属リストを取得
-            List<MTeam> mTeamList = teamService.getMTeamList();
-
-            model.addAttribute("mTeamList", mTeamList);
-
             model.addAttribute("insert", true); // 登録フラグ
 
+            // 所属登録画面に遷移
             return "team/teamRegist";
         }
 
@@ -89,24 +90,16 @@ public class TeamRegistController {
         // 所属の更新情報取得し、フォームに初期値をセット
         teamService.setMTeamForm(teamForm, bindingResult);
 
+        // 情報が見つからない、既に削除されている場合はエラーメッセージを表示
         if (teamForm.getTeamName() == null) {
 
-            // 所属リストを取得
-            List<MTeam> mTeamList = teamService.getMTeamList();
-
-            model.addAttribute("mTeamList", mTeamList);
-
+            // 所属管理画面に遷移
             return "team/index";
         }
 
         // 画面IDと所属IDをセッションに保存
         httpSession.setAttribute("screenId", teamForm.getScreenId());
         httpSession.setAttribute("teamId", teamForm.getTeamId());
-
-        // 所属リスト取得
-        List<MTeam> mTeamList = teamService.getMTeamList();
-
-        model.addAttribute("mTeamList", mTeamList);
 
         // 排他ロックがかかっているか確認
         boolean exclusiveControl = tExclusiveControlService.checkUpdateExclusiveControl(teamForm, bindingResult);
@@ -117,6 +110,7 @@ public class TeamRegistController {
 
         model.addAttribute("update", true); // 更新フラグ
 
+        // 所属更新画面に遷移
         return "team/teamRegist";
     }
 
@@ -140,21 +134,22 @@ public class TeamRegistController {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "所属登録", MessageDomain.PROP_KEY_MESSAGE0001, mUser.getUserId(),
                 Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // チェックか重複チェックがエラーの場合、エラーアラートを表示
+        // 所属リストを取得
+        List<MTeam> mTeamList = teamService.getMTeamList();
+
+        model.addAttribute("mTeamList", mTeamList);
+
+        model.addAttribute("insert", true); // 登録フラグ
+
+        // エラーの場合、エラーアラートを表示
         teamService.checkMTeam(teamForm, bindingResult);
         if (bindingResult.hasErrors()) {
 
-            // 所属リストを取得
-            List<MTeam> mTeamList = teamService.getMTeamList();
-
-            model.addAttribute("mTeamList", mTeamList);
-
-            model.addAttribute("insert", true); // 登録フラグ
-
+            // 所属登録画面に遷移
             return "team/teamRegist";
         }
 
-        // ★エラーではない場合、登録処理。完了メッセージを表示
+        // エラーではない場合、登録処理。完了メッセージを表示
         teamService.mTeamInsert(teamForm);
 
         String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0001, new String[] { "所属" },
@@ -162,13 +157,7 @@ public class TeamRegistController {
 
         model.addAttribute("completeMessage", message);
 
-        // ★所属リスト取得
-        List<MTeam> mTeamList = teamService.getMTeamList();
-
-        model.addAttribute("mTeamList", mTeamList);
-
-        model.addAttribute("insert", true); // 更新フラグ
-
+        // 所属登録画面に遷移
         return "team/teamRegist";
     }
 
@@ -201,6 +190,7 @@ public class TeamRegistController {
         // 画面IDをセッションから削除
         httpSession.removeAttribute("screenId");
 
+        // 所属管理画面へリダイレクト
         return "redirect:/team/index";
     }
 
@@ -225,42 +215,34 @@ public class TeamRegistController {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "所属更新", MessageDomain.PROP_KEY_MESSAGE0002, mUser.getUserId(),
                 Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // 削除済みまたは入力チェックか重複チェックがエラーの場合、エラーアラートを表示
-        teamService.checkMTeam(teamForm, bindingResult);
-        if (bindingResult.hasErrors()) {
-
-            // 所属リスト取得
-            List<MTeam> mTeamList = teamService.getMTeamList();
-
-            model.addAttribute("mTeamList", mTeamList);
-
-            model.addAttribute("update", true); // 更新フラグ
-
-            return "team/teamRegist";
-        }
-
-        // 更新処理
-        teamService.mTeamUpdate(teamForm);
-
-        // 排他ロック削除
-        tExclusiveControlService.isTExclusiveControlDelete();
-
-        // 画面IDと所属IDをセッションから削除
-        httpSession.removeAttribute("screenId");
-
-        // ★エラーではない場合、更新処理。完了メッセージを表示する
-        String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0002, new String[] { "所属" },
-                Locale.JAPAN);
-
-        model.addAttribute("completeMessage", message);
-
-        // ★所属リスト取得
+        // 所属リスト取得
         List<MTeam> mTeamList = teamService.getMTeamList();
 
         model.addAttribute("mTeamList", mTeamList);
 
         model.addAttribute("update", true); // 更新フラグ
 
+        // 削除済みまたはエラーの場合、エラーアラートを表示
+        teamService.checkMTeam(teamForm, bindingResult);
+        if (bindingResult.hasErrors()) {
+
+            // 所属更新画面へ遷移
+            return "team/teamRegist";
+        }
+
+        // 更新処理
+        teamService.mTeamUpdate(teamForm);
+
+        // 画面IDをセッションから削除
+        httpSession.removeAttribute("screenId");
+
+        // エラーではない場合、更新処理。完了メッセージを表示する
+        String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0002, new String[] { "所属" },
+                Locale.JAPAN);
+
+        model.addAttribute("completeMessage", message);
+
+        // 所属更新画面へ遷移
         return "team/teamRegist";
     }
 }

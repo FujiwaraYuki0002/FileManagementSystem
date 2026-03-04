@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import fms.dto.FileDto;
+import fms.entity.MUser;
 import fms.entity.TFile;
 
 /**
@@ -50,7 +51,8 @@ public interface TFileMapper {
      *
      * @return ファイル情報削除可否フラグ
      */
-    TFile getFileItem(@Param("fileId") Integer fileId, @Param("serialNumber") Integer serialNumber);
+    TFile getFileItem(@Param("fileId") Integer fileId, @Param("serialNumber") Integer serialNumber,
+            @Param("deleteFlg") int deleteFlg);
 
     /**
      * ファイル情報論理削除
@@ -64,13 +66,20 @@ public interface TFileMapper {
     boolean updateDeleteTFile(TFile tFile);
 
     /**
+     * ファイルシーケンス取得
+     *
+     * @return ファイル情報登録可否フラグ
+     */
+    int getFileSequence();
+
+    /**
      * ファイル情報登録
      *
      * @param tFile ファイルエンティティ
      *
      * @return ファイル情報登録可否フラグ
      */
-    boolean insertTFile(TFile tFile);
+    boolean insertTFiles(@Param("fileList") List<TFile> fileList);
 
     /**
      * ファイル情報更新
@@ -79,7 +88,7 @@ public interface TFileMapper {
      *
      * @return ファイル情報更新可否フラグ
      */
-    boolean updateTFile(TFile tFile);
+    boolean updateTFiles(List<TFile> tFiles);
 
     /**
      * 参加者情報削除
@@ -101,7 +110,18 @@ public interface TFileMapper {
      *
      * @return 登録可否
      */
-    boolean insertTJoinUser(TFile tFile);
+    boolean insertTJoinUsers(@Param("fileList") List<TFile> fileList);
+
+    /**
+     * 参加者情報取得
+     *
+     * @author 髙橋 真澄
+     *
+     * @param fileId
+     *
+     * @return 参加者情報
+     */
+    List<MUser> getTJoinUser(@Param("fileId") Integer fileId, @Param("deleteFlg") int deleteFlg);
 
     /**
      * 更新対象のファイル情報取得

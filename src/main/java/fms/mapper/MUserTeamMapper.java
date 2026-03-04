@@ -35,7 +35,7 @@ public interface MUserTeamMapper {
      *
      * @return 更新可否
      */
-    Boolean insertMUserTeam(MUserTeam mUserTeam);
+    Boolean insertMUserTeams(List<MUserTeam> mUserTeams);
 
     /**
      * 所属管理削除
@@ -50,4 +50,5 @@ public interface MUserTeamMapper {
      */
     Boolean deleteMUserTeam(@Param("userId") String userId,
             @Param("teamId") List<Integer> teamIdsToDelete);
+
 }

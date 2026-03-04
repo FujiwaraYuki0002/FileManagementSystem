@@ -83,10 +83,11 @@ public class TeamService {
 
             // リザルトに外部参照キーエラーを登録
             bindingResult.addError(new FieldError(bindingResult.getObjectName(), "teamName",
-                    messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0019, null, Locale.JAPAN)));
+                    messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0018, new String[] { "ユーザー" },
+                            Locale.JAPAN)));
 
             // エラーログ登録
-            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "外部参照キーエラー", MessageDomain.VALID_KEY_ERROR0019,
+            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "外部参照キーエラー", MessageDomain.VALID_KEY_ERROR0018,
                     mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
 
         }
@@ -164,11 +165,11 @@ public class TeamService {
 
         if (mTeam == null) {
 
-            //リザルトに削除済みエラーを登録
+            // リザルトに削除済みエラーを登録
             bindingResult.addError(new FieldError(bindingResult.getObjectName(), "teamName",
                     messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0011, null, Locale.JAPAN)));
 
-            //エラーログ登録
+            // エラーログ登録
             logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "削除済みエラー", MessageDomain.VALID_KEY_ERROR0011,
                     mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
 

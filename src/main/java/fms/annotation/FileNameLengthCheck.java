@@ -22,7 +22,7 @@ import fms.validation.FileNameLengthCheckValidation;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface FileNameLengthCheck {
-    String message() default "{" + MessageDomain.VALID_KEY_ERROR0018 + "}";
+    String message() default "{" + MessageDomain.VALID_KEY_ERROR0017 + "}";
 
     Class<?>[] groups() default {};
 

@@ -71,16 +71,17 @@ public class PostRegistController {
     public String mPostUpdate(@Valid @ModelAttribute PostForm postForm, BindingResult bindingResult, Model model,
             HttpSession httpSession) {
 
+        // 役職リストを取得
+        List<MPost> mPostList = postService.getMPostList();
+
+        model.addAttribute("mPostList", mPostList);
+
         // 登録の場合
         if (postForm.getPostId() == null) {
 
-            // 役職リストを取得
-            List<MPost> mPostList = postService.getMPostList();
-
-            model.addAttribute("mPostList", mPostList);
-
             model.addAttribute("insert", true); // 登録フラグ
 
+            // 役職登録画面に遷移
             return "post/postRegist";
         }
 
@@ -89,14 +90,16 @@ public class PostRegistController {
         // 役職の更新情報取得し、フォームに初期値をセット
         postService.setMPostForm(postForm, bindingResult);
 
+        // 情報が見つからない、既に削除されている場合はエラーメッセージを表示
+        if (postForm.getPostName() == null) {
+
+            // 役職管理画面に遷移
+            return "post/index";
+        }
+
         // 画面IDと役職IDをセッションに保存
         httpSession.setAttribute("screenId", postForm.getScreenId());
         httpSession.setAttribute("postId", postForm.getPostId());
-
-        // 役職リスト取得
-        List<MPost> mPostList = postService.getMPostList();
-
-        model.addAttribute("mPostList", mPostList);
 
         // 排他ロックがかかっているか確認
         boolean exclusiveControl = tExclusiveControlService.checkUpdateExclusiveControl(postForm, bindingResult);
@@ -107,6 +110,7 @@ public class PostRegistController {
 
         model.addAttribute("update", true); // 更新フラグ
 
+        // 役職更新画面に遷移
         return "post/postRegist";
     }
 
@@ -130,21 +134,22 @@ public class PostRegistController {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "役職登録", MessageDomain.PROP_KEY_MESSAGE0001, mUser.getUserId(),
                 Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // チェックか重複チェックがエラーの場合、エラーアラートを表示
+        // 役職リストを取得
+        List<MPost> mPostList = postService.getMPostList();
+
+        model.addAttribute("mPostList", mPostList);
+
+        model.addAttribute("insert", true); // 登録フラグ
+
+        // エラーの場合、エラーアラートを表示
         postService.checkMPost(postForm, bindingResult);
         if (bindingResult.hasErrors()) {
 
-            // 役職リストを取得
-            List<MPost> mPostList = postService.getMPostList();
-
-            model.addAttribute("mPostList", mPostList);
-
-            model.addAttribute("insert", true); // 登録フラグ
-
+            // 役職登録画面に遷移
             return "post/postRegist";
         }
 
-        // ★エラーではない場合、登録処理。完了メッセージを表示
+        // エラーではない場合、登録処理。完了メッセージを表示
         postService.mPostInsert(postForm);
 
         String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0001, new String[] { "役職" },
@@ -152,13 +157,7 @@ public class PostRegistController {
 
         model.addAttribute("completeMessage", message);
 
-        // ★役職リスト取得
-        List<MPost> mPostList = postService.getMPostList();
-
-        model.addAttribute("mPostList", mPostList);
-
-        model.addAttribute("insert", true); // 更新フラグ
-
+        // 役職登録画面に遷移
         return "post/postRegist";
     }
 
@@ -191,6 +190,7 @@ public class PostRegistController {
         // 画面IDをセッションから削除
         httpSession.removeAttribute("screenId");
 
+        // 役職管理画面へリダイレクト
         return "redirect:/post/index";
     }
 
@@ -215,27 +215,26 @@ public class PostRegistController {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "役職更新", MessageDomain.PROP_KEY_MESSAGE0002, mUser.getUserId(),
                 Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // 入力チェックか重複チェックがエラーの場合、エラーアラートを表示
+        // 役職リスト取得
+        List<MPost> mPostList = postService.getMPostList();
+
+        model.addAttribute("mPostList", mPostList);
+
+        model.addAttribute("update", true); // 更新フラグ
+
+        // 削除済みまたはエラーの場合、エラーアラートを表示
         postService.checkMPost(postForm, bindingResult);
+
         if (bindingResult.hasErrors()) {
 
-            // 役職リスト取得
-            List<MPost> mPostList = postService.getMPostList();
-
-            model.addAttribute("mPostList", mPostList);
-
-            model.addAttribute("update", true); // 更新フラグ
-
+            // 役職更新画面へ遷移
             return "post/postRegist";
         }
 
         // 更新処理
         postService.mPostUpdate(postForm);
 
-        // 排他ロック削除
-        tExclusiveControlService.isTExclusiveControlDelete();
-
-        // 画面IDと役職IDをセッションから削除
+        // 画面IDをセッションから削除
         httpSession.removeAttribute("screenId");
 
         // エラーではない場合、更新処理。完了メッセージを表示する
@@ -244,13 +243,7 @@ public class PostRegistController {
 
         model.addAttribute("completeMessage", message);
 
-        // ★役職リスト取得
-        List<MPost> mPostList = postService.getMPostList();
-
-        model.addAttribute("mPostList", mPostList);
-
-        model.addAttribute("update", true); // 更新フラグ
-
+        // 役職更新画面へ遷移
         return "post/postRegist";
     }
 }

@@ -2,6 +2,10 @@ package fms.ErrorHandler;
 
 import java.util.Locale;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
@@ -10,9 +14,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import fms.domain.LogDomain;
 import fms.domain.MessageDomain;
 import fms.util.LogUtil;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 
 /**
  * セッションタイムアウト確認用インターセプター
@@ -61,17 +62,14 @@ public class SessionTimeoutInterceptor implements HandlerInterceptor {
             logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "セッションタイムアウト", "SessionTimeout",
                     "SYSTEM_USER", Thread.currentThread().getStackTrace()[1].getClassName());
 
-            String exceptionErrorMessage = messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0022, null,
+            String exceptionErrorMessage = messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0021, null,
                     Locale.JAPAN);
 
             // RedirectAttributes を使ってメッセージをフラッシュスコープに追加
             request.getSession().setAttribute("exceptionErrorMessage", exceptionErrorMessage);
 
             // ログイン画面にリダイレクト
-            //本番
-            //response.sendRedirect("/file_management_system/");
-            //ローカル
-            response.sendRedirect("/");
+            response.sendRedirect("/file_management_system/");
 
             return false;
 

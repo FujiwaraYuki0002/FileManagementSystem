@@ -317,13 +317,13 @@ footer .right {
     font-weight: 600;
     font-size: 12px;
 }
-
+/* 戻る・クリアボタン */
 .white {
     background-color: #FFFFFF;
     color: #003366;
     border: solid 1px #003366;
 }
-
+/* 検索フォーム内のボタンのサイズ調整*/
 .colmun_button {
         font-size: 20px;
         padding: 8px 4px;
@@ -337,10 +337,6 @@ footer .right {
 
 .button.white:hover {
     background-color: #cccccc;
-}
-
-.button.dl:hover {
-    background-color: #98BAED;
 }
 
 input:disabled {
@@ -357,54 +353,4 @@ button:disabled {
 
 .del_button {
     display: flex;
-}
-
-.dropdown-button,
-.dl {
-    align-items: center;
-    width: auto;
-    /* 安藤修正2025012 */
-    margin: 3px 0px;
-    padding: .4em .8em;
-    border-radius: 5px;
-    font-weight: 600;
-    font-size: 10.5px;
-    background-color: #99CCFF;
-    color: #003366;
-    border: none;
-    box-shadow: 1px 1px;
-}
-
-label.file_label {
-    align-items: center;
-    width: auto;
-    margin: 0;
-    padding: 10px 60px;
-    color: #ffffff;
-    border-radius: 5px;
-    background-color: #2589d0;
-    cursor: pointer;
-}
-
-label.file_label:hover {
-    background-color: #1579c0;
-}
-
-input[type="file"] {
-    display: none;
-}
-
-.minus {
-    padding: 2px 7px 0 7px;
-    border: none;
-    background-color: red;
-    color: #FFFFFF;
-    font-weight: bold;
-    border-radius: 50%;
-    /* 角丸 */
-}
-
-.file_select a {
-    margin: 0;
-    color: #003366;
 }

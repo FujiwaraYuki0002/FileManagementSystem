@@ -2,6 +2,7 @@ package fms.controller.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -25,18 +26,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import fms.domain.LogDomain;
 import fms.domain.MessageDomain;
-import fms.domain.UserDomain;
 import fms.dto.FileDto;
-import fms.dto.UserDto;
-import fms.entity.MPost;
-import fms.entity.MTeam;
 import fms.entity.MUser;
 import fms.form.FileForm;
 import fms.service.FileService;
-import fms.service.PostService;
 import fms.service.TExclusiveControlService;
-import fms.service.TeamService;
-import fms.service.UserService;
 import fms.util.DateUtil;
 import fms.util.LogUtil;
 
@@ -52,18 +46,6 @@ public class FileSearchController {
     /** ファイルサービス */
     @Autowired
     private FileService fileService;
-
-    /** ユーザーサービス */
-    @Autowired
-    private UserService userService;
-
-    /** 役職サービス */
-    @Autowired
-    private PostService postService;
-
-    /** 所属サービス */
-    @Autowired
-    private TeamService teamService;
 
     /** メッセージプロパティ */
     @Autowired
@@ -100,14 +82,7 @@ public class FileSearchController {
     public String fileSearch(@ModelAttribute FileForm fileForm, Model model, HttpServletRequest httpServletRequest) {
 
         // ユーザー、役職、所属の情報を取得
-        List<UserDto> userList = userService.getUserDtoList(UserDomain.RETIREMENT_FLG_FALSE, null);
-        List<MPost> postList = postService.getMPostList();
-        List<MTeam> teamList = teamService.getMTeamList();
-
-        // 取得した情報をスコープに格納
-        model.addAttribute("userList", userList);
-        model.addAttribute("postList", postList);
-        model.addAttribute("teamList", teamList);
+        fileService.setParticipantSelectionList(model);
 
         // URLを比較し、管理画面か検索画面か判定する
         if (httpServletRequest.getRequestURI().equals("/file_management_system/file/index") ||
@@ -156,14 +131,7 @@ public class FileSearchController {
                 "FILE_SEARCH", mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
 
         // ユーザー、役職、所属の情報を取得
-        List<UserDto> userList = userService.getUserDtoList(UserDomain.RETIREMENT_FLG_FALSE, null);
-        List<MPost> postList = postService.getMPostList();
-        List<MTeam> teamList = teamService.getMTeamList();
-
-        // 取得した情報をスコープに格納
-        model.addAttribute("userList", userList);
-        model.addAttribute("postList", postList);
-        model.addAttribute("teamList", teamList);
+        fileService.setParticipantSelectionList(model);
 
         // URLを照合して遷移後の画面を切り替える
         if (httpServletRequest.getRequestURI().equals("/file_management_system/file/indexSearchExecute") ||
@@ -173,9 +141,7 @@ public class FileSearchController {
             model.addAttribute("index", true);
 
             // 『検索』ボタンが押されたかどうか
-            String searchButton = httpServletRequest.getParameter("searchButton");
-
-            if (searchButton == null) {
+            if (httpServletRequest.getParameter("searchButton") == null) {
                 // 『検索』ボタンが押されていないならば選択中のファイルIDを格納
 
                 // ☆更新の戻るボタンからの遷移
@@ -191,10 +157,11 @@ public class FileSearchController {
             model.addAttribute("search", true);
         }
 
+        // エラーのチェック
         if (bindingResult.hasErrors()) {
 
             // 検索条件の日付フォーマットを修正
-            fileService.formDateSet(fileForm);
+            dateUtil.formDateSet(fileForm);
 
             // ファイル検索・管理画面に遷移
             return "file/search";
@@ -203,8 +170,8 @@ public class FileSearchController {
         // 検索条件でファイルを検索
         List<FileDto> fileList = fileService.getFileList(fileForm);
 
-        // 検索結果が0件だった場合
-        if (fileList.isEmpty() && model.getAttribute("delete") == null) {
+        // 検索結果が0件だった場合 かつ 削除処理後ではない場合
+        if (fileList.isEmpty() && httpServletRequest.getParameter("searchButton") != null) {
 
             // エラーを追加
             bindingResult.addError(new FieldError(bindingResult.getObjectName(), "version",
@@ -220,9 +187,15 @@ public class FileSearchController {
             return "file/search";
         }
 
+        for (FileDto file : fileList) {
+
+            // 参加者の表示順を名前,役職で並び替える
+            file.getMUserList().sort(Comparator.comparing(MUser::getUserName).reversed());
+            file.getMUserList().sort(Comparator.comparing(MUser::getPostId).reversed());
+        }
+
         // 検索結果と入力情報をスコープに格納
         model.addAttribute("fileList", fileList);
-        model.addAttribute("fileForm", fileForm);
 
         // ファイル検索・管理画面に遷移
         return "file/search";
@@ -327,6 +300,7 @@ public class FileSearchController {
 
         // 遷移後の画面を管理画面にする
         model.addAttribute("index", true);
+
         // 排他ロックがかかっている場合、エラーアラートを表示
         if (bindingResult.hasErrors()) {
 
@@ -340,7 +314,7 @@ public class FileSearchController {
                 fileForm = (FileForm) httpSession.getAttribute("fileForm");
 
                 // 検索条件の日付フォーマットを修正
-                fileService.formDateSet(fileForm);
+                dateUtil.formDateSet(fileForm);
 
             } else {
 
@@ -348,9 +322,10 @@ public class FileSearchController {
                 return "redirect:/file/index";
             }
 
+            // セッション上のフォームを削除し、リダイレクトスコープにフォームを格納
             httpSession.removeAttribute("fileForm");
-
             redirectAttributes.addFlashAttribute("fileForm", fileForm);
+
             // 管理画面に遷移
             return "redirect:/file/indexSearchExecute";
         }
@@ -368,16 +343,16 @@ public class FileSearchController {
 
             // セッションにfileFormが存在する(事前に検索を行っていた)場合、それを取得
             if (httpSession.getAttribute("fileForm") != null) {
-                fileForm = (FileForm) httpSession.getAttribute("fileForm");
 
+                fileForm = (FileForm) httpSession.getAttribute("fileForm");
             } else {
 
                 // 管理画面に遷移
                 return "redirect:/file/index";
             }
 
+            // セッション上のフォームを削除し、リダイレクトスコープにフォームを格納
             httpSession.removeAttribute("fileForm");
-
             redirectAttributes.addFlashAttribute("fileForm", fileForm);
 
             // 管理画面に遷移
@@ -394,15 +369,14 @@ public class FileSearchController {
             fileForm = (FileForm) httpSession.getAttribute("fileForm");
 
             // 検索条件の日付フォーマットを修正
-            if (!fileForm.getDateFrom().isEmpty()) {
+            if (fileForm.getDateFrom() != null && !fileForm.getDateFrom().isEmpty()) {
 
                 // form内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
                 fileForm.setDateFrom(dateUtil.hyphenDate(fileForm.getDateFrom()));
-
             }
 
             // 日付が入力されているか
-            if (!fileForm.getDateTo().isEmpty()) {
+            if (fileForm.getDateTo() != null && !fileForm.getDateTo().isEmpty()) {
 
                 // form内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
                 fileForm.setDateTo(dateUtil.hyphenDate(fileForm.getDateTo()));
