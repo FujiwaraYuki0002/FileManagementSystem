@@ -403,10 +403,10 @@
 
             // sendBeaconを使用してリクエスト送信（POST）
             // ローカル用
-            //navigator.sendBeacon("/file/saveFileDelete", formData);
+            navigator.sendBeacon("/file/saveFileDelete", formData);
 
             // 本番用
-            navigator.sendBeacon("/file_management_system/file/saveFileDelete", formData);
+            //navigator.sendBeacon("/file_management_system/file/saveFileDelete", formData);
         });
 
         const fileList = /*[[${fileList}]]*/[];  // サーバーサイドから渡されたユーザーデータ
