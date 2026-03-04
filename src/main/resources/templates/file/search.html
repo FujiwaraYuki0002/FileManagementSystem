@@ -11,8 +11,9 @@
     <!--/* メイン */-->
     <div class="container">
 
-        <!--/*完了メッセージ*/-->
-        <div th:include="~{/common/completeMessage}"></div>
+        <!--/* 完了メッセージ */-->
+        <!--/* th:includeはspring3.1で削除予定なのでth:insertに変更 by藤田 誠也 */-->
+        <div th:insert="~{/common/completeMessage}"></div>
 
         <div class="title">
             <h1 th:if="${search != null}">ファイル検索</h1>

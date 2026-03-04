@@ -210,6 +210,7 @@ public class FileService {
             tFile.setLastModifiedDate(dateUtil.getToday());
             tFile.setLastModifiedUser(mUser.getUserId());
 
+            System.out.println(tFile);
             // ファイル情報更新
             tFileMapper.insertTFile(tFile);
         }
@@ -224,6 +225,7 @@ public class FileService {
             tFile.setLastModifiedDate(dateUtil.getToday());
             tFile.setLastModifiedUser(mUser.getUserId());
 
+            System.out.println(tFile);
             // 参加者情報を登録
             tFileMapper.insertTJoinUser(tFile);
         }
