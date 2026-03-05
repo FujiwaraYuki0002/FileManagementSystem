@@ -64,7 +64,6 @@ function selectRadioButton(optionName) {
 function errorAlert() {
     // アラート表示
     $('#errorAlert').show();
-    $('#overlay').show();
     document.getElementById("errorAlert").style.display = "block";
         trapTab();
 }
@@ -72,7 +71,6 @@ function errorAlert() {
 // アラートを閉じる
 function closeAlert(targetId) {
     $('#errorAlert').hide();
-    $('#overlay').hide();
 
     document.getElementById("errorAlert").style.display = "none";
        restoreTab();

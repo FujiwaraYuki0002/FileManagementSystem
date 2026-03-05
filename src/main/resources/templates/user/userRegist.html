@@ -28,7 +28,7 @@
                             </div>
                             <div class="right_textbox">
                                 <input type="text" th:class="${update != null ? 'textbox check' : 'textbox clear'}"
-                                    size="40" placeholder="半角英数字を含む8文字～20文字" id="input1" name="userId"
+                                    size="40" id="input1" name="userId"
                                     th:value="*{userId}" required validate[required]
                                     th:disabled="${update != null || (exclusiveControl != null && exclusiveControl)}"
                                     th:classappend="${#fields.hasErrors('userId') ? 'errorTextbox' : ''}">
@@ -57,12 +57,14 @@
                                     th:classappend="${#fields.hasErrors('checkPassword') ? 'errorTextbox' : ''}"
                                     th:disabled="${exclusiveControl != null && exclusiveControl}"
                                     th:placeholder="${update != null ? '変更しない場合入力しないでください' : ''}">
+                                <span class="attention" th:if="${insert != null}">*ユーザーIDは数字を含む半角英文字、記号(._@-)で8～20文字にしてください。
+                                </span>
                                 <span class="attention">*パスワードは英文字(大文字、小文字)、数字、記号を全て含む10文字～20文字にしてください。
                                 </span>
                                 <span class="tooltip tooltip-clear">
                                     <span class="tooltip-text">入力された値を全削除します。</span>
                                     <input type="button" value="クリア" class="white colmun_button button"
-                                        onclick="clearForm()">
+                                        th:if="${insert != null}"onclick="clearForm()">
                                 </span>
                             </div>
                         </div>
