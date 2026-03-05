@@ -1,7 +1,6 @@
 package fms.form;
 
 import jakarta.validation.constraints.Pattern;
-
 import lombok.Data;
 
 /**
@@ -13,7 +12,7 @@ import lombok.Data;
 @Data
 public class UserForm {
 
-    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)[a-zA-Z0-9]{8,20}$", message = "{ERROR0005}")
+    @Pattern(regexp = "^$|^(?=.*\\d)[a-zA-Z0-9._@\\-]{8,20}$", message = "{ERROR0005}")
     /** ユーザID */
     private String userId;
 

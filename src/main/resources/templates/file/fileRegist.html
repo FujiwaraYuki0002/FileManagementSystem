@@ -143,6 +143,7 @@
 
                                     <button type = "button"
                                             class    = "white colmun_button button clear tooltip tooltip-clear"
+                                            th:if="${insert != null}"
                                             onclick  = clearForm()
                                             th:disabled="${exclusiveControl != null && exclusiveControl}">
                                             <span class="tooltip-text">入力された値を全削除します。</span>クリア</button>

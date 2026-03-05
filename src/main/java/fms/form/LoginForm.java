@@ -2,7 +2,6 @@ package fms.form;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-
 import lombok.Data;
 
 /**
@@ -15,7 +14,7 @@ import lombok.Data;
 public class LoginForm {
 
     /** ユーザーID */
-    @Pattern(regexp = "^$|^[a-zA-Z0-9]+$", message = "{ERROR0004}")
+    @Pattern(regexp = "^$|^(?=.*\\d)[a-zA-Z0-9\\-_\\.@]+$", message = "{ERROR0004}")
     @NotBlank(message = "{ERROR0001}")
     private String userId;
 
