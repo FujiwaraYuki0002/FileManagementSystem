@@ -4,15 +4,12 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
-import jakarta.servlet.http.HttpSession;
-
-import org.apache.ibatis.session.SqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.dao.PermissionDeniedDataAccessException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -23,6 +20,7 @@ import fms.domain.LogDomain;
 import fms.domain.MessageDomain;
 import fms.entity.MUser;
 import fms.util.LogUtil;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * 異常終了時ログ登録クラス
@@ -44,10 +42,6 @@ public class GlobalExceptionHandler {
     @Autowired
     private MUser mUser;
 
-    /** SQLセッション */
-    @Autowired
-    private SqlSession sqlSession;
-
     /**
      * データベース関連のSQL例外（DataIntegrityViolationException）を処理する。
      * 発生したDataIntegrityViolationExceptionの内容をログに記録し、セッションを無効化した後、ログイン画面にリダイレクトする。
@@ -67,9 +61,6 @@ public class GlobalExceptionHandler {
         // エラーログをLogUtilを使ってデータベースに追加
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "データ整合性違反", "DataIntegrityViolationException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
-
-        // sqlsessionをクローズ
-        closeSqlSession();
 
         // エラーログをコンソール上に出力
         ex.printStackTrace();
@@ -105,9 +96,6 @@ public class GlobalExceptionHandler {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "アクセス権限不足", "PermissionDeniedDataAccessException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // sqlsessionをクローズ
-        closeSqlSession();
-
         // エラーログをコンソール上に出力
         ex.printStackTrace();
 
@@ -131,9 +119,9 @@ public class GlobalExceptionHandler {
      * @param DeadlockLoserDataAccessException ex
      * @return ログイン画面
      */
-    @ExceptionHandler(DeadlockLoserDataAccessException.class)
+    @ExceptionHandler(PessimisticLockingFailureException.class)
     public String handleDeadlockLoserDataAccessException(HttpSession session, RedirectAttributes redirectAttributes,
-            DeadlockLoserDataAccessException ex) {
+            PessimisticLockingFailureException ex) {
 
         // userIdを取得
         String userId = (mUser.getUserId() != null) ? mUser.getUserId() : "SYSTEM_USER";
@@ -141,9 +129,6 @@ public class GlobalExceptionHandler {
         // エラーログをLogUtilを使ってデータベースに追加
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "デッドロックによるトランザクション失敗", "DeadlockLoserDataAccessException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
-
-        // sqlsessionをクローズ
-        closeSqlSession();
 
         // エラーログをコンソール上に出力
         ex.printStackTrace();
@@ -179,9 +164,6 @@ public class GlobalExceptionHandler {
         // エラーログをLogUtilを使ってデータベースに追加
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "予期しないエラーコード", "UncategorizedSQLException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
-
-        // sqlsessionをクローズ
-        closeSqlSession();
 
         // エラーログをコンソール上に出力
         ex.printStackTrace();
@@ -247,9 +229,6 @@ public class GlobalExceptionHandler {
 
         }
 
-        // sqlsessionをクローズ
-        closeSqlSession();
-
         // セッションを無効化
         session.invalidate();
 
@@ -276,9 +255,6 @@ public class GlobalExceptionHandler {
         // エラーログをLogUtilを使ってデータベースに追加
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "入出力中にエラー", "IOException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
-
-        // sqlsessionをクローズ
-        closeSqlSession();
 
         // エラーログをコンソール上に出力
         ex.printStackTrace();
@@ -314,9 +290,6 @@ public class GlobalExceptionHandler {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "nullオブジェクトに対する操作エラー", "NullPointerException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // sqlsessionをクローズ
-        closeSqlSession();
-
         // エラーログをコンソール上に出力
         ex.printStackTrace();
 
@@ -351,9 +324,6 @@ public class GlobalExceptionHandler {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "メモリ不足", "OutOfMemoryError",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // sqlsessionをクローズ
-        closeSqlSession();
-
         // エラーログをコンソール上に出力
         ex.printStackTrace();
 
@@ -387,9 +357,6 @@ public class GlobalExceptionHandler {
         // エラーログをLogUtilを使ってデータベースに追加
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "スタック領域不足", "StackOverflowError",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
-
-        // sqlsessionをクローズ
-        closeSqlSession();
 
         // エラーログをコンソール上に出力
         ex.printStackTrace();
@@ -426,9 +393,6 @@ public class GlobalExceptionHandler {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "不正なオブジェクトの状態", "IllegalStateException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // sqlsessionをクローズ
-        closeSqlSession();
-
         // エラーログをコンソール上に出力
         ex.printStackTrace();
 
@@ -462,9 +426,6 @@ public class GlobalExceptionHandler {
         // エラーログをLogUtilを使ってデータベースに追加
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "操作タイムアウト", "TimeoutException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
-
-        // sqlsessionをクローズ
-        closeSqlSession();
 
         // エラーログをコンソール上に出力
         ex.printStackTrace();
@@ -500,9 +461,6 @@ public class GlobalExceptionHandler {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "アクセス権限不足", "AccessDeniedException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // sqlsessionをクローズ
-        closeSqlSession();
-
         // エラーログをコンソール上に出力
         ex.printStackTrace();
 
@@ -535,9 +493,6 @@ public class GlobalExceptionHandler {
         // エラーログをLogUtilを使ってデータベースに追加
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "不正な引数", "IllegalArgumentException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
-
-        // sqlsessionをクローズ
-        closeSqlSession();
 
         // エラーログをコンソール上に出力
         ex.printStackTrace();
@@ -573,9 +528,6 @@ public class GlobalExceptionHandler {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "サポートされていない操作", "UnsupportedOperationException",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // sqlsessionをクローズ
-        closeSqlSession();
-
         // エラーログをコンソール上に出力
         ex.printStackTrace();
 
@@ -609,9 +561,6 @@ public class GlobalExceptionHandler {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "その他の異常終了", "Exception",
                 userId, Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // sqlsessionをクローズ
-        closeSqlSession();
-
         // エラーログをコンソール上に出力
         ex.printStackTrace();
 
@@ -624,23 +573,6 @@ public class GlobalExceptionHandler {
 
         // ログイン画面にリダイレクト
         return "redirect:/";
-    }
-
-    /**
-     * 例外が発生した際にsqlsessionをクローズする。
-     * クローズに失敗した場合コンソールにエラーを出力。
-     */
-    private void closeSqlSession() {
-        if (sqlSession != null) {
-            try {
-                sqlSession.close(); // MyBatisの場合
-
-            } catch (Exception ex) {
-
-                // エラーログをコンソール上に出力
-                ex.printStackTrace();
-            }
-        }
     }
 
 }
