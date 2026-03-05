@@ -28,6 +28,7 @@
                             <div class="left_label">
                                 <label>題名</label>
                                 <label>日付</label>
+                                <label>時間</label>
                                 <br>
                                 <label>参加者</label>
                             </div>
@@ -50,11 +51,18 @@
                                         ofPattern('yyyyMMdd')).format(T(java.time.format.DateTimeFormatter).ofPattern('yyyy-MM-dd')) : ''}"
                                     th:disabled="${exclusiveControl != null && exclusiveControl}"
                                     th:classappend = "${#fields.hasErrors('meetingDate') ? 'errorTextbox' : ''}">
+                                <div class="input_date">
+                                    <input type="time"
+                                        th:disabled="${exclusiveControl != null && exclusiveControl}"
+                                    > ～ <input type="time"
+                                        th:disabled="${exclusiveControl != null && exclusiveControl}">
+                                </div>
                                 <input type="button"
                                     value="参加者を選択"
                                     class="button"
                                     id="showButton"
                                     th:disabled="${exclusiveControl != null && exclusiveControl}">
+
                                 <!--/* 選択者リスト */-->
                                 <div class="external_selected_container">
                                     <div class="external_selected_list">
@@ -528,7 +536,7 @@
         function clearForm() {
 
                 // テキストフィールド、日付入力、ファイル入力の値を空にする
-                $('input[type="text"], input[type="date"], input[type="file"], textarea,input[name="userId"], input[name="userName"], input[name="fileName[]"]').val('');
+                $('input[type="text"], input[type="date"], input[type="file"], textarea,input[name="userId"], input[name="userName"], input[name="fileName[]"], input[type="time"]').val('');
 
                 // ファイル名表示を「選択されていません」にする
                 $('#file_name1, #file_name2, #file_name3').text('選択されていません');
