@@ -1,5 +1,6 @@
 package fms.controller.file;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -22,19 +23,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import fms.domain.LogDomain;
 import fms.domain.MessageDomain;
-import fms.domain.UserDomain;
 import fms.dto.FileDto;
-import fms.dto.UserDto;
-import fms.entity.MPost;
-import fms.entity.MTeam;
 import fms.entity.MUser;
 import fms.form.FileForm;
 import fms.form.FileInputForm;
 import fms.service.FileService;
-import fms.service.PostService;
 import fms.service.TExclusiveControlService;
-import fms.service.TeamService;
-import fms.service.UserService;
 import fms.util.DateUtil;
 import fms.util.LogUtil;
 
@@ -50,18 +44,6 @@ public class FileRegistController {
     /** ファイルサービス */
     @Autowired
     private FileService fileService;
-
-    /** ユーザーサービス */
-    @Autowired
-    private UserService userService;
-
-    /** 役職サービス */
-    @Autowired
-    private PostService postService;
-
-    /** 所属サービス */
-    @Autowired
-    private TeamService teamService;
 
     /** メッセージプロパティ */
     @Autowired
@@ -96,29 +78,69 @@ public class FileRegistController {
      *
      * @return ファイル登録画面
      */
-    @RequestMapping(path = { "/insert", "/update" }, method = RequestMethod.POST)
-    public String fileInsert(@ModelAttribute FileInputForm fileInputForm, BindingResult bindingResult,
-            HttpSession httpSession, Model model, HttpServletRequest httpServletRequest) {
+    @RequestMapping(path = { "/insert",
+            "/update" }, method = RequestMethod.POST)
+    public String fileInsert(@ModelAttribute FileInputForm fileInputForm,
+            BindingResult bindingResult,
+            HttpSession httpSession, Model model,
+            HttpServletRequest httpServletRequest,
+            RedirectAttributes redirectAttributes) {
 
         // ユーザー、役職、所属の情報を取得
-        List<UserDto> userList = userService.getUserDtoList(UserDomain.RETIREMENT_FLG_FALSE, null);
-        List<MPost> postList = postService.getMPostList();
-        List<MTeam> teamList = teamService.getMTeamList();
+        fileService.setParticipantSelectionList(model);
 
-        // 更新対象の情報を取得
-        List<String> fileNameList = fileService.getFileNameList(fileInputForm.getFileId());
+        // 更新対象以外のファイル名を取得し、スコープに格納
+        List<String> fileNameList = fileService
+                .getFileNameList(fileInputForm.getFileId());
 
-        // 必要情報をスコープに格納
-        model.addAttribute("userList", userList);
-        model.addAttribute("postList", postList);
-        model.addAttribute("teamList", teamList);
         model.addAttribute("fileNameList", fileNameList);
 
-        if (httpServletRequest.getRequestURI().equals("/file_management_system/file/update") ||
+        if (httpServletRequest.getRequestURI()
+                .equals("/file_management_system/file/update") ||
                 httpServletRequest.getRequestURI().equals("/file/update")) {
 
             // フォームに画面IDをセット
             fileInputForm.setScreenId("file-update");
+
+            // 更新対象の情報を取得
+            FileDto file = fileService.getFile(fileInputForm, bindingResult);
+
+            // 更新対象のファイルが見つからなかった場合
+            if (file == null) {
+
+                // 遷移後の画面を管理画面にする
+                model.addAttribute("index", true);
+
+                // 再検索用のフォームを作成
+                FileForm fileForm = new FileForm();
+
+                // エラー情報をリクエストスコープに格納
+                redirectAttributes.addFlashAttribute("bindingResult",
+                        bindingResult);
+
+                // セッションにfileFormが存在する(事前に検索を行っていた)場合、それを取得
+                if (httpSession.getAttribute("fileForm") != null) {
+
+                    // セッション上から検索条件を取得
+                    fileForm = (FileForm) httpSession.getAttribute("fileForm");
+
+                    // 検索条件の日付フォーマットを修正
+                    dateUtil.formDateSet(fileForm);
+
+                } else {
+                    // 行っていない場合はそのまま管理画面の初期表示
+
+                    // 管理画面に遷移
+                    return "redirect:/file/index";
+                }
+
+                httpSession.removeAttribute("fileForm");
+
+                redirectAttributes.addFlashAttribute("fileForm", fileForm);
+
+                // 管理画面に遷移
+                return "redirect:/file/indexSearchExecute";
+            }
 
             // 排他ロックがかかっているか確認
             boolean exclusiveControl = tExclusiveControlService
@@ -127,9 +149,6 @@ public class FileRegistController {
             // 排他ロックがかかっている場合(true)、エラーアラートを表示
             // 排他ロックがかかっていない場合(false)
             model.addAttribute("exclusiveControl", exclusiveControl);
-
-            // 更新対象の情報を取得
-            FileDto file = fileService.getFile(fileInputForm);
 
             List<String> userIdList = new ArrayList<>();
             List<String> userNameList = new ArrayList<>();
@@ -173,94 +192,59 @@ public class FileRegistController {
      * @param bindingResult リザルト
      * @param httpSession セッション
      * @param model モデル
-     * @param redirectAttributes リダイレクト
      *
      * @return 正常:ファイル管理画面 異常:ファイル登録画面
      */
     @RequestMapping(path = "/insert", params = "insertButton", method = RequestMethod.POST)
-    public String fileInsertExecute(@Valid @ModelAttribute FileInputForm fileInputForm, BindingResult bindingResult,
-            HttpSession httpSession, Model model, RedirectAttributes redirectAttributes) {
+    public String fileInsertExecute(
+            @Valid @ModelAttribute FileInputForm fileInputForm,
+            BindingResult bindingResult,
+            HttpSession httpSession, Model model) {
 
         // 操作ログ登録
-        logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ファイル登録", MessageDomain.PROP_KEY_MESSAGE0001, mUser.getUserId(),
+        logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ファイル登録",
+                MessageDomain.PROP_KEY_MESSAGE0001, mUser.getUserId(),
                 Thread.currentThread().getStackTrace()[1].getClassName());
 
         // ユーザー、役職、所属の情報を取得
-        List<UserDto> userList = userService.getUserDtoList(UserDomain.RETIREMENT_FLG_FALSE, null);
-        List<MPost> postList = postService.getMPostList();
-        List<MTeam> teamList = teamService.getMTeamList();
+        fileService.setParticipantSelectionList(model);
 
         // 登録済みのファイル名を取得
-        List<String> fileNameList = fileService.getFileNameList(fileInputForm.getFileId());
+        List<String> fileNameList = fileService
+                .getFileNameList(fileInputForm.getFileId());
+        model.addAttribute("fileNameList", fileNameList);
 
         // 入力エラーの有無
-        if (bindingResult.hasErrors()) {
+        if (!bindingResult.hasErrors()) {// エラーが無かったら
 
-            // エラーだった場合
+            // ファイルを登録
+            try {
+                fileService.insertTFile(fileInputForm);
 
-            // 入力された日付の表記を変更して再格納
-            fileInputForm.setMeetingDate(dateUtil.noHyphenDate(fileInputForm.getMeetingDate()));
-
-            // 必要情報をスコープに格納
-            model.addAttribute("userList", userList);
-            model.addAttribute("postList", postList);
-            model.addAttribute("teamList", teamList);
-            model.addAttribute("fileNameList", fileNameList);
-
-            // 遷移後の画面を設定
-            model.addAttribute("insert", true);
-
-            // 登録画面に遷移
-            return "file/fileRegist";
-        }
-
-        // エラーが無かったら
-
-        // ファイルを登録
-        fileService.insertTFile(fileInputForm);
-
-        // 完了メッセージを用意
-        String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0001,
-                new String[] { "ファイル" }, Locale.JAPAN);
-        redirectAttributes.addFlashAttribute("completeMessage", message);
-
-        // 検索条件保持用フォームを作成
-        FileForm fileForm = new FileForm();
-
-        // セッションにfileFormが存在する(事前に検索を行っていた)場合、それを取得
-        if (httpSession.getAttribute("fileForm") != null) {
-
-            // セッション上の検索条件を取得
-            fileForm = (FileForm) httpSession.getAttribute("fileForm");
-
-            // 日付が入力されているか
-            if (!fileForm.getDateFrom().isEmpty()) {
-
-                // form内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
-                fileForm.setDateFrom(dateUtil.hyphenDate(fileForm.getDateFrom()));
-
+                fileInputForm.setFile(null);
+            } catch (IOException e) {
+                // TODO 自動生成された catch ブロック
+                e.printStackTrace();
             }
 
-            // 日付が入力されているか
-            if (!fileForm.getDateTo().isEmpty()) {
+            // 完了メッセージを用意
+            String message = messageSource.getMessage(
+                    MessageDomain.PROP_KEY_MESSAGE0001,
+                    new String[] { "ファイル" }, Locale.JAPAN);
 
-                // form内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
-                fileForm.setDateTo(dateUtil.hyphenDate(fileForm.getDateTo()));
-            }
-        } else {
-
-            // 管理画面に遷移
-            return "redirect:/file/index";
+            model.addAttribute("completeMessage", message);
         }
+        // エラーだった場合はそのまま登録画面に遷移
 
-        // 検索条件とファイルIDをセッションから削除
-        httpSession.removeAttribute("fileForm");
-        httpSession.removeAttribute("fileId");
+        // 入力された日付の表記を変更して再格納
+        fileInputForm.setMeetingDate(
+                dateUtil.noHyphenDate(fileInputForm.getMeetingDate()));
 
-        redirectAttributes.addFlashAttribute("fileForm", fileForm);
+        // 遷移後の画面を設定
+        model.addAttribute("insert", true);
 
-        // 管理画面に遷移
-        return "redirect:/file/indexSearchExecute";
+        // 登録画面に遷移
+        return "file/fileRegist";
     }
 
     /**
@@ -274,9 +258,11 @@ public class FileRegistController {
      *
      * @return ファイル管理画面
      */
-    @RequestMapping(path = { "/updateBack", "/insertBack" }, method = RequestMethod.POST)
+    @RequestMapping(path = { "/updateBack",
+            "/insertBack" }, method = RequestMethod.POST)
     public String updateBack(HttpSession httpSession,
-            RedirectAttributes redirectAttributes, HttpServletRequest httpServletRequest) {
+            RedirectAttributes redirectAttributes,
+            HttpServletRequest httpServletRequest) {
 
         // 排他ロック削除
         tExclusiveControlService.isTExclusiveControlDelete();
@@ -288,7 +274,8 @@ public class FileRegistController {
         httpSession.removeAttribute("screenId");
 
         // 登録画面からの遷移かどうか
-        if (httpServletRequest.getRequestURI().equals("/file_management_system/file/insertBack") ||
+        if (httpServletRequest.getRequestURI()
+                .equals("/file_management_system/file/insertBack") ||
                 httpServletRequest.getRequestURI().equals("/file/insertBack")) {
 
             // その場合はファイルIDを削除
@@ -300,14 +287,17 @@ public class FileRegistController {
             fileForm = (FileForm) httpSession.getAttribute("fileForm");
 
             // 日付が入力されているか
-            if (!fileForm.getDateFrom().isEmpty()) {
+            if (fileForm.getDateFrom() != null
+                    && !fileForm.getDateFrom().isEmpty()) {
 
                 // form内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
-                fileForm.setDateFrom(dateUtil.hyphenDate(fileForm.getDateFrom()));
+                fileForm.setDateFrom(
+                        dateUtil.hyphenDate(fileForm.getDateFrom()));
             }
 
             // 日付が入力されているか
-            if (!fileForm.getDateTo().isEmpty()) {
+            if (fileForm.getDateTo() != null
+                    && !fileForm.getDateTo().isEmpty()) {
 
                 // form内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
                 fileForm.setDateTo(dateUtil.hyphenDate(fileForm.getDateTo()));
@@ -342,103 +332,104 @@ public class FileRegistController {
      * @return 正常:ファイル管理画面 異常:ファイル更新画面
      */
     @RequestMapping(path = "/update", params = "updateButton", method = RequestMethod.POST)
-    public String fileUpdateExecute(HttpSession httpSession, @Valid @ModelAttribute FileInputForm fileInputForm,
-            BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) {
+    public String fileUpdateExecute(HttpSession httpSession,
+            @Valid @ModelAttribute FileInputForm fileInputForm,
+            BindingResult bindingResult, Model model,
+            RedirectAttributes redirectAttributes) {
 
         // 操作ログ登録
-        logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ファイル更新", MessageDomain.PROP_KEY_MESSAGE0002, mUser.getUserId(),
+        logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ファイル更新",
+                MessageDomain.PROP_KEY_MESSAGE0002, mUser.getUserId(),
                 Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // 入力チェックエラーの確認
-        if (bindingResult.hasErrors()) {
+        // 更新対象の情報を取得
+        FileDto file = fileService.getFile(fileInputForm, bindingResult);
 
-            // エラーがあった場合
+        // 更新対象のファイルが見つからなかった場合
+        if (file == null) {
 
-            // ユーザー、役職、所属の情報を取得
-            List<UserDto> userList = userService.getUserDtoList(UserDomain.RETIREMENT_FLG_FALSE, null);
-            List<MPost> postList = postService.getMPostList();
-            List<MTeam> teamList = teamService.getMTeamList();
+            // 排他ロック削除
+            tExclusiveControlService.isTExclusiveControlDelete();
 
-            // 更新対象の情報を取得
-            FileDto file = fileService.getFile(fileInputForm);
-            // 登録済みのファイル名を取得
-            List<String> fileNameList = fileService.getFileNameList(fileInputForm.getFileId());
+            // 遷移後の画面を管理画面にする
+            model.addAttribute("index", true);
 
-            // 入力値に対応した初期値準備
+            // 再検索用のフォームを作成
+            FileForm fileForm = new FileForm();
 
-            // SpringのBeanUtilsを使用してコピー
-            BeanUtils.copyProperties(fileInputForm, file);
+            // エラー情報をリクエストスコープに格納
+            redirectAttributes.addFlashAttribute("bindingResult",
+                    bindingResult);
 
-            // コピーできないファイル名と会議実施日を上書き
-            IntStream.range(0, file.getTFileList().size())
-                    .forEach(index -> file.getTFileList().get(index)
-                            .setFileName(fileInputForm.getFileName().get(index)));
+            // セッションにfileFormが存在する(事前に検索を行っていた)場合、それを取得
+            if (httpSession.getAttribute("fileForm") != null) {
 
-            // 入力された日付の表記を変更して再格納
-            fileInputForm.setMeetingDate(dateUtil.noHyphenDate(fileInputForm.getMeetingDate()));
+                // セッション上から検索条件を取得
+                fileForm = (FileForm) httpSession.getAttribute("fileForm");
 
-            // 必要情報をスコープに格納
-            model.addAttribute("userList", userList);
-            model.addAttribute("postList", postList);
-            model.addAttribute("teamList", teamList);
-            model.addAttribute("file", file);
-            model.addAttribute("fileNameList", fileNameList);
-            model.addAttribute("exclusiveControl", false);
+                // 検索条件の日付フォーマットを修正
+                dateUtil.formDateSet(fileForm);
 
-            // 遷移後の画面を設定
-            model.addAttribute("update", true);
+            } else {
+                // 行っていない場合はそのまま管理画面の初期表示
 
-            // 更新画面に遷移
-            return "file/fileRegist";
-        }
-
-        // エラーが無かったら更新処理
-        fileService.updateTFile(fileInputForm, bindingResult);
-
-        // 排他ロック削除
-        tExclusiveControlService.isTExclusiveControlDelete();
-
-        // 画面IDとファイルIDをセッションから削除
-        httpSession.removeAttribute("screenId");
-
-        // 完了メッセージを用意
-        String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0002,
-                new String[] { "ファイル" }, Locale.JAPAN);
-
-        redirectAttributes.addFlashAttribute("completeMessage", message);
-
-        FileForm fileForm = new FileForm();
-        // セッションにfileFormが存在する(事前に検索を行っていた)場合、それを取得
-        if (httpSession.getAttribute("fileForm") != null) {
-            fileForm = (FileForm) httpSession.getAttribute("fileForm");
-
-            // 日付が入力されているか
-            if (!fileForm.getDateFrom().isEmpty()) {
-
-                // form内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
-                fileForm.setDateFrom(dateUtil.hyphenDate(fileForm.getDateFrom()));
-
+                // 管理画面に遷移
+                return "redirect:/file/index";
             }
 
-            // 日付が入力されているか
-            if (!fileForm.getDateTo().isEmpty()) {
+            httpSession.removeAttribute("fileForm");
 
-                // form内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
-                fileForm.setDateTo(dateUtil.hyphenDate(fileForm.getDateTo()));
-            }
-        } else {
+            redirectAttributes.addFlashAttribute("fileForm", fileForm);
 
             // 管理画面に遷移
-            return "redirect:/file/index";
+            return "redirect:/file/indexSearchExecute";
         }
 
-        // セッション上から検索フォームを削除
-        httpSession.removeAttribute("fileForm");
+        // 入力チェックエラーの確認
+        if (!bindingResult.hasErrors()) {
 
-        // 検索条件をリクエストスコープに格納
-        redirectAttributes.addFlashAttribute("fileForm", fileForm);
+            // エラーが無かったら更新処理
+            fileService.updateTFile(fileInputForm, bindingResult);
 
-        // 管理画面に遷移
-        return "redirect:/file/indexSearchExecute";
+            // 完了メッセージを用意
+            String message = messageSource.getMessage(
+                    MessageDomain.PROP_KEY_MESSAGE0002,
+                    new String[] { "ファイル" }, Locale.JAPAN);
+
+            model.addAttribute("completeMessage", message);
+        }
+
+        // ユーザー、役職、所属の情報を取得
+        fileService.setParticipantSelectionList(model);
+
+        // 登録済みのファイル名を取得
+        List<String> fileNameList = fileService
+                .getFileNameList(fileInputForm.getFileId());
+
+        // 入力値に対応した初期値準備
+
+        // SpringのBeanUtilsを使用してコピー
+        BeanUtils.copyProperties(fileInputForm, file);
+
+        // コピーできないファイル名と会議実施日を上書き
+        IntStream.range(0, file.getTFileList().size())
+                .forEach(index -> file.getTFileList().get(index)
+                        .setFileName(fileInputForm.getFileName().get(index)));
+
+        // 入力された日付の表記を変更して再格納
+        fileInputForm.setMeetingDate(
+                dateUtil.noHyphenDate(fileInputForm.getMeetingDate()));
+
+        model.addAttribute("file", file);
+        model.addAttribute("fileNameList", fileNameList);
+        model.addAttribute("exclusiveControl", false);
+
+        // 遷移後の画面を設定
+        model.addAttribute("update", true);
+
+        // 更新画面に遷移
+        return "file/fileRegist";
+
     }
+
 }

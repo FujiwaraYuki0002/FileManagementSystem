@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
@@ -16,12 +20,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import fms.domain.LogDomain;
 import fms.domain.MessageDomain;
-import fms.domain.UserDomain;
 import fms.dto.UserDto;
-import fms.entity.MPost;
-import fms.entity.MTeam;
 import fms.entity.MUser;
-import fms.form.FileForm;
 import fms.form.LoginForm;
 import fms.service.LoginService;
 import fms.service.PostService;
@@ -29,9 +29,6 @@ import fms.service.TExclusiveControlService;
 import fms.service.TeamService;
 import fms.service.UserService;
 import fms.util.LogUtil;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
 
 /**
  * ログインコントローラー
@@ -126,100 +123,86 @@ public class LoginController {
         List<String> errorMessageList = new ArrayList<>();
 
         // 入力チェックエラーがあったか
-        if (!bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors()) {
 
-            // エラーがなかったらIDを元にユーザー情報を問い合わせ
-            MUser loginUser = loginService.loginCheck(loginForm);
+            // 入力チェックエラーがあった場合
 
-            /**  @author 安藤 優海 */
-            // IDとパスワードが正しければファイル検索画面に遷移
-            if (loginUser != null) {
+            // フィールドに関連するエラーを全取得
+            List<FieldError> errors = bindingResult.getFieldErrors();
 
-                // 操作ログ登録
-                logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ログイン", "LOGIN",
-                        loginUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
+            // エラーリスト内に"Pattern"のエラーが存在するかどうか
+            boolean hasPatternError = errors.stream()
+                    .anyMatch(error -> error.getCode().equals("Pattern"));
 
-                // ログインした時に古いセッションIDを破棄
-                httpSession.invalidate();
+            // エラーリスト内に"NotBlank"のエラーが存在するかどうか
+            boolean hasNotBlankError = errors.stream()
+                    .anyMatch(error -> error.getCode().equals("NotBlank"));
 
-                // セッションを新規で作成する
-                HttpSession newSession = httpServletRequest.getSession(true);
+            // "Pattern"のエラーが存在する場合
+            if (hasPatternError) {
 
-                // パスワード照合出来た場合は@Autowired用にmUserにもログイン情報を格納
-                mUser.setUserId(loginUser.getUserId());
-                mUser.setUserName(loginUser.getUserName());
-                mUser.setRole(loginUser.getRole());
-
-                UserDto userDto = new UserDto();
-
-                userDto.setUserId(loginUser.getUserId());
-                userDto.setUserName(loginUser.getUserName());
-                userDto.setRole(loginUser.getRole());
-
-                newSession.setAttribute("loginUser", userDto);
-                /**  ここまで */
-
-                // 検索条件でファイルを検索
-                List<UserDto> userList = userService.getUserDtoList(UserDomain.RETIREMENT_FLG_FALSE, null);
-                List<MPost> postList = postService.getMPostList();
-                List<MTeam> teamList = teamService.getMTeamList();
-                FileForm fileForm = new FileForm();
-
-                model.addAttribute("userList", userList);
-                model.addAttribute("postList", postList);
-                model.addAttribute("teamList", teamList);
-                model.addAttribute("fileForm", fileForm);
-
-                // 遷移後の画面を検索画面にする
-                model.addAttribute("search", true);
-
-                // ファイル検索画面に遷移
-                return "file/search";
+                // メッセージをリストに追加
+                errorMessageList.add(messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0004,
+                        new String[] { "IDまたはパスワード" }, Locale.JAPAN));
             }
 
-            // パスワードが正しくなければエラーメッセージを追加
-            errorMessageList.add(messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0004,
-                    new String[] { "IDまたはパスワード" }, Locale.JAPAN));
+            // "NotBlank"のエラーが存在する場合
+            if (hasNotBlankError) {
+
+                // メッセージをリストに追加
+                errorMessageList.add(messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0001,
+                        new String[] { "IDとパスワード" }, Locale.JAPAN));
+            }
 
             // フォームとエラーメッセージをスコープに登録
-            model.addAttribute(errorMessageList);
+            model.addAttribute("loginForm", loginForm);
             model.addAttribute("errorMessageList", errorMessageList);
 
             // ログイン画面に遷移
             return "login/login";
         }
 
-        // 入力チェックエラーがあった場合
+        // エラーがなかったらIDを元にユーザー情報を問い合わせ
+        MUser loginUser = loginService.loginCheck(loginForm);
 
-        // フィールドに関連するエラーを全取得
-        List<FieldError> errors = bindingResult.getFieldErrors();
+        /**  @author 安藤 優海 */
+        // IDとパスワードが正しければファイル検索画面に遷移
+        if (loginUser != null) {
 
-        // エラーリスト内に"Pattern"のエラーが存在するかどうか
-        boolean hasPatternError = errors.stream()
-                .anyMatch(error -> error.getCode().equals("Pattern"));
+            // 操作ログ登録
+            logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ログイン", "LOGIN",
+                    loginUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // エラーリスト内に"NotBlank"のエラーが存在するかどうか
-        boolean hasNotBlankError = errors.stream()
-                .anyMatch(error -> error.getCode().equals("NotBlank"));
+            // ログインした時に古いセッションIDを破棄
+            httpSession.invalidate();
 
-        // "Pattern"のエラーが存在する場合
-        if (hasPatternError) {
+            // セッションを新規で作成する
+            HttpSession newSession = httpServletRequest.getSession(true);
 
-            // メッセージをリストに追加
-            errorMessageList.add(messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0004,
-                    new String[] { "IDまたはパスワード" }, Locale.JAPAN));
+            // パスワード照合出来た場合は@Autowired用にmUserにもログイン情報を格納
+            mUser.setUserId(loginUser.getUserId());
+            mUser.setUserName(loginUser.getUserName());
+            mUser.setRole(loginUser.getRole());
+
+            UserDto userDto = new UserDto();
+
+            userDto.setUserId(loginUser.getUserId());
+            userDto.setUserName(loginUser.getUserName());
+            userDto.setRole(loginUser.getRole());
+
+            newSession.setAttribute("loginUser", userDto);
+            /**  ここまで */
+
+            // ファイル検索画面に遷移
+            return "redirect:/file/search";
         }
 
-        // "NotBlank"のエラーが存在する場合
-        if (hasNotBlankError) {
-
-            // メッセージをリストに追加
-            errorMessageList.add(messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0001,
-                    new String[] { "IDとパスワード" }, Locale.JAPAN));
-        }
+        // パスワードが正しくなければエラーメッセージを追加
+        errorMessageList.add(messageSource.getMessage(MessageDomain.VALID_KEY_ERROR0004,
+                new String[] { "IDまたはパスワード" }, Locale.JAPAN));
 
         // フォームとエラーメッセージをスコープに登録
-        model.addAttribute("loginForm", loginForm);
+        model.addAttribute(errorMessageList);
         model.addAttribute("errorMessageList", errorMessageList);
 
         // ログイン画面に遷移

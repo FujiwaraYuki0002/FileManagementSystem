@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,28 +19,41 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.tika.parser.txt.CharsetDetector;
+import org.apache.tika.parser.txt.CharsetMatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.UncategorizedSQLException;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.multipart.MultipartFile;
 
 import fms.domain.Constants;
 import fms.domain.LogDomain;
 import fms.domain.MessageDomain;
+import fms.domain.UserDomain;
 import fms.dto.FileDto;
+import fms.dto.UserDto;
+import fms.entity.MPost;
+import fms.entity.MTeam;
 import fms.entity.MUser;
 import fms.entity.TFile;
 import fms.form.FileForm;
 import fms.form.FileInputForm;
 import fms.mapper.TFileMapper;
+import fms.rep.TFileRepository;
 import fms.util.DateUtil;
 import fms.util.LogUtil;
 
@@ -70,6 +84,21 @@ public class FileService {
     /** メッセージプロパティ */
     @Autowired
     private MessageSource messageSource;
+
+    /** ユーザーサービス */
+    @Autowired
+    private UserService userService;
+
+    /** 役職サービス */
+    @Autowired
+    private PostService postService;
+
+    /** 所属サービス */
+    @Autowired
+    private TeamService teamService;
+
+    @Autowired
+    private TFileRepository tFileRepository;
 
     /**
      * ファイル情報検索
@@ -154,8 +183,10 @@ public class FileService {
             }
         }
 
+        // 重複するファイルを削除
         allFileList = allFileList.stream()
-                .collect(Collectors.toMap(FileDto::getFileId, file -> file, (existing, replacement) -> existing))
+                .collect(Collectors.toMap(FileDto::getFileId, file -> file,
+                        (existing, replacement) -> existing))
                 .values()
                 .stream()
                 .collect(Collectors.toList());
@@ -174,13 +205,20 @@ public class FileService {
      * @author 髙橋 真澄
      *
      * @param fileInputForm 登録・更新情報入力ファイルフォーム
+     * @throws IOException
      */
-    public void insertTFile(FileInputForm fileInputForm) {
+    @Transactional
+    public void insertTFile(FileInputForm fileInputForm) throws IOException {
 
-        // ファイル登録用エンティティ
+        // ユーザーIDの有無を確認
+        if (fileInputForm.getUserId().isEmpty() || fileInputForm.getUserId() == null) {
+            throw new DataIntegrityViolationException("ユーザーIDがnullです");
+        }
+
         TFile tFile = new TFile();
 
-        // ファイル情報の更新処理
+        // ファイル登録用リスト
+        List<TFile> fileList = new ArrayList<>();
 
         // ファイル管理連番
         int serialNumber = 1;
@@ -188,47 +226,97 @@ public class FileService {
         // 渡されたファイル配列の番号
         int fileIndex = 0;
 
-        // ファイルの数分登録を繰り返す
+        // ファイル管理番号のシーケンスを取得
+        int fileId = tFileMapper.getFileSequence();
+
+        // ファイルの数の分、登録情報をリストに追加
         for (String fileName : fileInputForm.getFileName()) {
 
-            // ファイル名が空かどうか
+            // ファイル名が無い場合は次に
             if (fileName.isBlank()) {
-
-                // 空なら次のファイルをチェック
                 fileIndex++;
                 continue;
             }
 
-            // 入っているなら登録情報をエンティティにセット
-            tFile.setFileId(tFile.getFileId());
-            tFile.setSerialNumber(serialNumber++);
-            tFile.setTitle(fileInputForm.getTitle());
-            tFile.setFileName(fileName);
-            tFile.setFile(fileInputForm.getFile().get(fileIndex++));
-            tFile.setDate(dateUtil.noHyphenDate(fileInputForm.getMeetingDate()));
-            tFile.setFirstCreateDate(dateUtil.getToday());
-            tFile.setLastModifiedDate(dateUtil.getToday());
-            tFile.setLastModifiedUser(mUser.getUserId());
+            // ファイルをMultipartFile型で格納
+            MultipartFile multipartFile = fileInputForm.getFile().get(fileIndex++);
 
-            System.out.println(tFile);
-            // ファイル情報更新
-            tFileMapper.insertTFile(tFile);
+            // 拡張子が.txtの場合、UTF-8に変換する処理
+            if (fileName.endsWith(".txt")) {
+                byte[] utf8Bytes = convertToUtf8(multipartFile);
+
+                // MockMultipartFile で新しい MultipartFile を作成
+                multipartFile = new MockMultipartFile(
+                        fileName, fileName, "text/plain", utf8Bytes);
+            }
+
+            try {
+
+                // 登録処理
+                tFileRepository.insertFile(fileId,
+                        serialNumber++,
+                        multipartFile,
+                        fileInputForm.getTitle(),
+                        fileName,
+                        dateUtil.noHyphenDate(fileInputForm.getMeetingDate()),
+                        dateUtil.getToday(),
+                        dateUtil.getToday(),
+                        mUser.getUserId());
+            } catch (Exception e) {
+
+                e.printStackTrace();
+                throw new UncategorizedSQLException(null, null, null);
+            }
         }
 
-        // 参加者情報を登録
-        for (String userId : fileInputForm.getUserId()) {
+        // ユーザーIDの有無を確認
+        if (fileInputForm.getUserId().isEmpty() || fileInputForm.getUserId() == null) {
+            throw new DataIntegrityViolationException("ユーザーIDがnullです");
+        }
 
-            // 参加者情報をエンティティに格納
-            tFile.setFileId(tFile.getFileId());
+        fileList = new ArrayList<>();
+
+        // 参加者情報をリストに格納
+        for (String userId : fileInputForm.getUserId()) {
+            tFile = new TFile();
+            tFile.setFileId(fileId);
             tFile.setUserId(userId);
             tFile.setFirstCreateDate(dateUtil.getToday());
             tFile.setLastModifiedDate(dateUtil.getToday());
             tFile.setLastModifiedUser(mUser.getUserId());
 
-            System.out.println(tFile);
-            // 参加者情報を登録
-            tFileMapper.insertTJoinUser(tFile);
+            // 複数のTFileエンティティをリストに追加
+            fileList.add(tFile);
         }
+
+        // 一括挿入を実行
+        tFileMapper.insertTJoinUsers(fileList);
+    }
+
+    private static byte[] convertToUtf8(MultipartFile file) throws IOException {
+        byte[] fileBytes = file.getBytes();
+
+        // 文字コードを判別
+        Charset detectedCharset = detectCharset(fileBytes);
+
+        // もし UTF-8 以外なら変換する
+        if (!detectedCharset.equals(StandardCharsets.UTF_8)) {
+            return new String(fileBytes, detectedCharset).getBytes(StandardCharsets.UTF_8);
+        }
+        return fileBytes;
+    }
+
+    // 文字コードを判別するメソッド
+    private static Charset detectCharset(byte[] bytes) {
+        CharsetDetector detector = new CharsetDetector();
+        detector.setText(bytes);
+        CharsetMatch match = detector.detect();
+
+        if (match != null) {
+            return Charset.forName(match.getName());
+        }
+        return StandardCharsets.UTF_8; // デフォルトでUTF-8
+
     }
 
     /**
@@ -288,7 +376,11 @@ public class FileService {
      */
     public ResponseEntity<Resource> getFileItem(FileForm fileForm) {
 
-        TFile file = tFileMapper.getFileItem(fileForm.getFileId(), fileForm.getSerialNumber());
+        TFile file = new TFile();
+
+        file = tFileRepository.getFileItem(fileForm.getFileId(),
+                fileForm.getSerialNumber(),
+                Constants.DELETE_FLG_FALSE);
 
         if (file == null || !((File) file.getFile()).exists()) {
             // ファイルが見つからない場合
@@ -307,15 +399,18 @@ public class FileService {
 
         try {
             // ファイル名をUTF-8エンコード
-            encodedFileName = URLEncoder.encode(fileName, "UTF-8").replaceAll("\\+", "%20");
+            encodedFileName = URLEncoder.encode(fileName, "UTF-8")
+                    .replaceAll("\\+", "%20");
         } catch (UnsupportedEncodingException e) {
             // エンコード失敗時のエラーハンドリング
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
         }
 
         // HTTPヘッダーを設定
         HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName);
+        headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename*=UTF-8''" + encodedFileName);
 
         // レスポンスを返す
         ResponseEntity<Resource> response = ResponseEntity.ok()
@@ -336,31 +431,37 @@ public class FileService {
      *
      * @return ダウンロード処理のレスポンス
      */
-    public ResponseEntity<Resource> getFilesAsZip(FileForm fileForm) throws IOException {
+    public ResponseEntity<Resource> getFilesAsZip(FileForm fileForm)
+            throws IOException {
         // ZIP出力ストリームを用意
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
+        ZipOutputStream zipOutputStream = new ZipOutputStream(
+                byteArrayOutputStream);
 
         // 一時ファイルを格納するリスト
         List<File> tempFiles = new ArrayList<>();
 
-        FileDto tfileDto = tFileMapper.getFileDto(fileForm.getFileId(), Constants.DELETE_FLG_FALSE);
-
         // zipファイル名
         String title = null;
+
+        // zipファイル名に使用する日付
+        String date = null;
 
         try {
             // ファイルリスト内の各ファイルをZIPに追加
             for (int i = 1; i < 4; i++) {
                 // ファイルを取得
-                TFile file = tFileMapper.getFileItem(fileForm.getFileId(), i);
+                TFile file = tFileRepository.getFileItem(fileForm.getFileId(), i,
+                        Constants.DELETE_FLG_FALSE);
 
+                // ファイルが存在しない場合は次へ
                 if (file == null) {
                     continue;
                 }
 
-                // zipのファイル名を作成
+                // zipのファイル名、日付をセット
                 title = file.getTitle();
+                date = file.getDate();
 
                 // ZIP内で使用するファイル名
                 String zipEntryName = file.getFileName(); // getFileName()を使用
@@ -379,7 +480,8 @@ public class FileService {
                     tempFiles.add(fileObj);
                 } else {
                     // file.getFile()が予期しない型の場合の処理
-                    throw new IllegalArgumentException("Unsupported file type: " + file.getFile().getClass().getName());
+                    throw new IllegalArgumentException("Unsupported file type: "
+                            + file.getFile().getClass().getName());
                 }
 
                 // ZIPエントリを追加
@@ -403,11 +505,20 @@ public class FileService {
             // ZIPエントリを作成
             zipOutputStream.putNextEntry(new ZipEntry(txtFileName));
 
-            zipOutputStream.write(("[参加者一覧]" + "\n").getBytes(StandardCharsets.UTF_8));
+            zipOutputStream
+                    .write(("[参加者一覧]" + "\n").getBytes(StandardCharsets.UTF_8));
+
+            List<MUser> mUserList = tFileMapper.getTJoinUser(
+                    fileForm.getFileId(), Constants.DELETE_FLG_FALSE);
+
+            // 参加者の表示順を名前,役職で並び替える
+            mUserList.sort(Comparator.comparing(MUser::getUserName).reversed());
+            mUserList.sort(Comparator.comparing(MUser::getPostId).reversed());
 
             // リスト内の文字列を改行してファイルに書き込む
-            for (MUser user : tfileDto.getMUserList()) {
-                zipOutputStream.write(("・" + user.getUserName() + "\n").getBytes(StandardCharsets.UTF_8)); // 各行ごとに改行を追加
+            for (MUser user : mUserList) {
+                zipOutputStream.write(("・" + user.getUserName() + "\n")
+                        .getBytes(StandardCharsets.UTF_8)); // 各行ごとに改行を追加
             }
 
             // txtファイルのエントリを閉じる
@@ -417,17 +528,21 @@ public class FileService {
             zipOutputStream.close();
 
             // ZIPファイル名を設定
-            String zipFileName = title + "_" + tfileDto.getDate() + ".zip";
+            String zipFileName = title + "_" + date + ".zip";
 
             // Unicodeをエンコード
-            String encodedZipFileName = URLEncoder.encode(zipFileName, "UTF-8").replaceAll("\\+", "%20");
+            String encodedZipFileName = URLEncoder.encode(zipFileName, "UTF-8")
+                    .replaceAll("\\+", "%20");
 
             // ZIPデータをResourceとしてラップ
-            Resource resource = new ByteArrayResource(byteArrayOutputStream.toByteArray());
+            Resource resource = new ByteArrayResource(
+                    byteArrayOutputStream.toByteArray());
 
             // レスポンスを返す
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedZipFileName + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + encodedZipFileName
+                                    + "\"")
                     .header(HttpHeaders.CONTENT_TYPE, "application/zip")
                     .body(resource);
         } finally {
@@ -449,9 +564,27 @@ public class FileService {
      *
      * @return ファイル情報DTO
      */
-    public FileDto getFile(FileInputForm fileInputForm) {
+    public FileDto getFile(FileInputForm fileInputForm,
+            BindingResult bindingResult) {
 
-        return tFileMapper.getFileDto(fileInputForm.getFileId(), Constants.DELETE_FLG_FALSE);
+        FileDto fileDto = tFileMapper.getFileDto(fileInputForm.getFileId(),
+                Constants.DELETE_FLG_FALSE);
+
+        if (fileDto == null) {
+
+            // リザルトに削除済みエラーを登録
+            bindingResult.addError(new FieldError(bindingResult.getObjectName(),
+                    "fileDelete",
+                    messageSource.getMessage("ERROR0011", null, Locale.JAPAN)));
+
+            // エラーログ登録
+            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "削除済みエラー",
+                    MessageDomain.VALID_KEY_ERROR0011,
+                    mUser.getUserId(),
+                    Thread.currentThread().getStackTrace()[1].getClassName());
+        }
+
+        return fileDto;
 
     }
 
@@ -476,44 +609,67 @@ public class FileService {
      *
      * @param fileInputForm ファイルフォーム
      */
-    public void updateTFile(FileInputForm fileInputForm, BindingResult bindingResult) {
+    @Transactional
+    public void updateTFile(FileInputForm fileInputForm,
+            BindingResult bindingResult) {
 
-        // ファイル更新用エンティティ
+        if (fileInputForm.getUserId().isEmpty()
+                || fileInputForm.getUserId() == null) {
+            throw new DataIntegrityViolationException("ユーザーIDがnullです");
+        }
+
+        // 更新用のTFileリスト
+        List<TFile> tFiles = new ArrayList<>();
         TFile tFile = new TFile();
 
         // ファイル情報の更新処理
-
-        // ファイル管理連番
         int serialNumber = 1;
         for (String fileName : fileInputForm.getFileName()) {
-
+            tFile = new TFile();
             tFile.setFileId(fileInputForm.getFileId());
             tFile.setSerialNumber(serialNumber++);
             tFile.setTitle(fileInputForm.getTitle());
             tFile.setFileName(fileName);
-            tFile.setDate(dateUtil.noHyphenDate(fileInputForm.getMeetingDate()));
+            tFile.setDate(
+                    dateUtil.noHyphenDate(fileInputForm.getMeetingDate()));
             tFile.setLastModifiedDate(dateUtil.getToday());
             tFile.setLastModifiedUser(mUser.getUserId());
             tFile.setVersion(fileInputForm.getVersion());
 
-            // ファイル情報更新
-            tFileMapper.updateTFile(tFile);
+            // TFileリストに追加
+            tFiles.add(tFile);
+        }
+
+        // ファイル情報の一括更新を実行
+        tFileMapper.updateTFiles(tFiles);
+
+        if (fileInputForm.getUserId().isEmpty()
+                || fileInputForm.getUserId() == null) {
+            throw new DataIntegrityViolationException("ユーザーIDがnullです");
         }
 
         // 参加者情報を一度削除
         tFileMapper.deleteTJoinUser(fileInputForm.getFileId());
 
-        // 参加者情報を登録
+        // リストの初期化
+        tFiles = new ArrayList<>();
+
+        // 参加者情報の用意
         for (String userId : fileInputForm.getUserId()) {
 
+            tFile = new TFile();
             tFile.setFileId(fileInputForm.getFileId());
             tFile.setUserId(userId);
             tFile.setFirstCreateDate(dateUtil.getToday());
             tFile.setLastModifiedDate(dateUtil.getToday());
             tFile.setLastModifiedUser(mUser.getUserId());
 
-            tFileMapper.insertTJoinUser(tFile);
+            // 複数のTFileエンティティをリストに追加
+            tFiles.add(tFile);
         }
+
+        // 一括挿入を実行
+        tFileMapper.insertTJoinUsers(tFiles);
     }
 
     /**
@@ -524,7 +680,9 @@ public class FileService {
      * @param fileForm
      * @param bindingResult バインディングリザルト
      */
-    public void updateDeleteTFile(FileForm fileForm, BindingResult bindingResult) {
+    @Transactional
+    public void updateDeleteTFile(FileForm fileForm,
+            BindingResult bindingResult) {
 
         // 論理削除用の情報をエンティティに格納
         TFile tFile = new TFile();
@@ -541,37 +699,37 @@ public class FileService {
         if (!isFileDelete) {
 
             // リザルトに削除済みエラーを登録
-            bindingResult.addError(new FieldError(bindingResult.getObjectName(), "fileDelete",
+            bindingResult.addError(new FieldError(bindingResult.getObjectName(),
+                    "fileDelete",
                     messageSource.getMessage("ERROR0011", null, Locale.JAPAN)));
 
             // エラーログ登録
-            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "削除済みエラー", MessageDomain.VALID_KEY_ERROR0011,
-                    mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
+            logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "削除済みエラー",
+                    MessageDomain.VALID_KEY_ERROR0011,
+                    mUser.getUserId(),
+                    Thread.currentThread().getStackTrace()[1].getClassName());
         }
     }
 
     /**
-     * フォームの日時表記の修正
+     * 『参加者を選択』ダイアログの情報用意
      *
      * @author 髙橋 真澄
      *
-     * @param fileForm
+     * @param model モデル
+     *
      */
-    public void formDateSet(FileForm fileForm) {
+    public void setParticipantSelectionList(Model model) {
 
-        // 日付が入力されているか
-        if (!fileForm.getDateFrom().isEmpty()) {
+        // ユーザー、役職、所属の情報を取得
+        List<UserDto> userList = userService
+                .getUserDtoList(UserDomain.RETIREMENT_FLG_FALSE, null);
+        List<MPost> postList = postService.getMPostList();
+        List<MTeam> teamList = teamService.getMTeamList();
 
-            // 不正ならばform内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
-            fileForm.setDateFrom(dateUtil.noHyphenDate(fileForm.getDateFrom()));
-
-        }
-
-        // 日付が入力されているか
-        if (!fileForm.getDateTo().isEmpty()) {
-
-            // 不正ならばform内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
-            fileForm.setDateTo(dateUtil.noHyphenDate(fileForm.getDateTo()));
-        }
+        // 必要情報をスコープに格納
+        model.addAttribute("userList", userList);
+        model.addAttribute("postList", postList);
+        model.addAttribute("teamList", teamList);
     }
 }

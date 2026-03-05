@@ -22,7 +22,7 @@ import fms.validation.FileNameDuplicationCheckValidation;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface FileNameDuplicationCheck {
-    String message() default "{" + MessageDomain.VALID_KEY_ERROR0020 + "}";
+    String message() default "{" + MessageDomain.VALID_KEY_ERROR0019 + "}";
 
     Class<?>[] groups() default {};
 

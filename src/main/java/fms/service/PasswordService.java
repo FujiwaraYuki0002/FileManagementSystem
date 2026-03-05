@@ -39,6 +39,10 @@ public class PasswordService {
     @Autowired
     private DateUtil dateUtil;
 
+    /** ユーザーエンティティ */
+    @Autowired
+    private MUser mUser;
+
     /**
      * ID・パスワード照合処理
      *
@@ -63,9 +67,8 @@ public class PasswordService {
         if (!isLogin) {
 
             // パスワード照合出来なかった場合はエラーログ登録
-            // 未ログイン状態のためユーザーIDの代わりに"noLoginUser"で登録
             logUtil.addLog(LogDomain.CODE_LOG_SECTION_ERROR, "照合エラー", MessageDomain.VALID_KEY_ERROR0004,
-                    "noLoginUser", Thread.currentThread().getStackTrace()[1].getClassName());
+                    passwordForm.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
         }
 
         return isLogin;
@@ -93,7 +96,7 @@ public class PasswordService {
         updateUser.setUserId(passwordForm.getUserId());
         updateUser.setPassword(encodeedPassword);
         updateUser.setLastModifiedDate(dateUtil.getToday());
-        updateUser.setLastModifiedUser(passwordForm.getUserId());
+        updateUser.setLastModifiedUser(mUser.getUserId());
         updateUser.setVersion(uerVersion);
 
         mUserMapper.updateMUserPassword(updateUser);

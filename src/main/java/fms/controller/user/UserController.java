@@ -57,7 +57,7 @@ public class UserController {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "ユーザー管理", "USER_INDEX",
                 mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // ☆更新の戻るボタンからの遷移
+        // 更新の戻るボタンからの遷移
         String userId = (String) httpSession.getAttribute("userId");
         userForm.setUserId(userId);
 

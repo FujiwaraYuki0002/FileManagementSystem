@@ -47,11 +47,10 @@ public class FileNameDuplicationCheckValidation
         }
 
         // 無いならファイル名の重複チェックを行う
-
         long distinctCount = value.getFileName().stream().distinct().count();
 
         if (distinctCount < value.getFileName().size()) {
-            String errorMessage = messageSource.getMessage("{" + MessageDomain.VALID_KEY_ERROR0020 + "}", null,
+            String errorMessage = messageSource.getMessage("{" + MessageDomain.VALID_KEY_ERROR0019 + "}", null,
                     context.getDefaultConstraintMessageTemplate(), Locale.getDefault());
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(errorMessage)

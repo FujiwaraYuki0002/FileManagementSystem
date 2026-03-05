@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 
 import fms.annotation.NoInputCheck;
+import fms.domain.MessageDomain;
 import fms.form.FileForm;
 
 /**
@@ -40,11 +41,16 @@ public class NoInputCheckValidation implements ConstraintValidator<NoInputCheck,
                 (value.getFindWord().replaceAll("[\\s　]", "").isEmpty())) {
 
             // 未入力だった場合エラーメッセージを登録
-            String errorMessage = messageSource.getMessage("{ERROR0008}", new String[] { "検索条件" },
+            String errorMessage = messageSource.getMessage("{" + MessageDomain.VALID_KEY_ERROR0018 + "}",
+                    null,
                     context.getDefaultConstraintMessageTemplate(), Locale.getDefault());
+
+            // デフォルトのエラーメッセージを無効化
             context.disableDefaultConstraintViolation();
+
+            // エラーメッセージを設定
             context.buildConstraintViolationWithTemplate(errorMessage)
-                    .addPropertyNode("fileId")
+                    .addPropertyNode("searchConditions")
                     .addConstraintViolation();
 
             return false;

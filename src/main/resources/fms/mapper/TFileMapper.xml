@@ -4,222 +4,253 @@
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="fms.mapper.TFileMapper">
 
-    <!-- ダウンロード対象のファイルを取得 -->
-    <resultMap type="fms.entity.TFile" id="fileItem">
-        <result column="file_id" property="fileId" />
-        <result column="serial_number" property="serialNumber" />
-        <result column="title" property="title" />
-        <result column="file_Name" property="fileName" />
-        <result column="file" property="file" typeHandler="fms.handler.ByteArrayTypeHandler"/>
-    </resultMap>
-    <select id="getFileItem" resultMap="fileItem">
-        SELECT tFile.file_id,
-               tFile.serial_number,
-               tFile.title,
-               tFile.file_name,
-               tFile.file
-        FROM t_file tFile
-        WHERE tFile.file_id = #{fileId}
-        <if test="serialNumber != '' and serialNumber != null">
-            AND tFile.serial_number = #{serialNumber}
-        </if>
-        ORDER BY tFile.file_id,tFile.serial_number ASC
-    </select>
+      <!-- ダウンロード対象のファイルを取得 -->
+      <resultMap type="fms.entity.TFile" id="fileItem">
+          <result column="file_id" property="fileId" />
+          <result column="serial_number" property="serialNumber" />
+          <result column="title" property="title" />
+          <result column="date" property="date" />
+          <result column="file_Name" property="fileName" />
+          <result column="file" property="file" typeHandler="fms.handler.ByteArrayTypeHandler"/>
+      </resultMap>
+      <select id="getFileItem" resultMap="fileItem">
+          SELECT tFile.file_id,
+                 tFile.serial_number,
+                 tFile.title,
+                 tFile.date,
+                 tFile.file_name,
+                 tFile.file
+          FROM t_file tFile
+          WHERE tFile.file_id = #{fileId}
+              AND tFile.serial_number = #{serialNumber}
+          ORDER BY tFile.file_id ASC,tFile.serial_number ASC
+      </select>
 
-    <!-- ファイルの検索 -->
-    <resultMap type="fms.dto.FileDto" id="fileDtoList">
-        <id column="file_id" property="fileId" />
-        <result column="serial_number" property="serialNumber" />
-        <result column="title" property="title" />
-        <result column="date" property="date" />
-        <result column="version" property="version" />
-        <collection property="mUserList"
-            ofType="fms.entity.MUser">
-            <result column="user_name" property="userName" />
-        </collection>
-        <collection property="tFileList"
-            ofType="fms.entity.TFile">
-            <result column="file_Name" property="fileName" />
-        </collection>
-    </resultMap>
-    <select id="getFileDtoList" resultMap="fileDtoList">
-        SELECT tFile.file_id,
-               tFile.serial_number,
-               mUser.user_name,
-               tFile.title,
-               tFile.date,
-               tFile.file_name,
-               tFile.version
-        FROM t_file tFile
-            LEFT OUTER JOIN t_join_user tJoinUser ON tFile.file_id = tJoinUser.file_id
-            LEFT OUTER JOIN m_user mUser ON tJoinUser.user_id = mUser.user_id
-        WHERE tFile.delete_flg = #{deleteFlg}
-        <if test="title != ''">
-            AND tFile.file_id IN (SELECT file_id
-                               FROM t_file
-                               WHERE title LIKE CONCAT('%', #{title}, '%')
-                               GROUP BY file_id)
-        </if>
-        <if test="fileName != ''">
-            AND tFile.file_id IN (SELECT file_id
-                               FROM t_file
-                               WHERE file_name LIKE CONCAT('%', #{fileName}, '%')
-                               GROUP BY file_id)
-        </if>
-        <if test="dateFrom != '' and dateTo == ''">
-            AND tFile.date >= #{dateFrom}
-        </if>
-        <if test="dateFrom == '' and dateTo != ''">
-            AND #{dateTo} >= tFile.date
-        </if>
-        <if test="dateFrom != '' and dateTo != ''">
-            AND tFile.date BETWEEN #{dateFrom} AND #{dateTo}
-        </if>
-        <if test="userId">
-            AND tFile.file_id IN (SELECT file_id
-                               FROM t_join_user
-                               WHERE user_id = #{userId}
-                               GROUP BY file_id)
-        </if>
-        <if test="findWord != ''">
-            AND tFile.file_id IN (SELECT file_id
-                               FROM t_file
-                               WHERE delete_flg = #{deleteFlg}
-                               AND REPLACE(REPLACE(convert_from(t_file.file, 'UTF8'), E'\r', ''), E'\n', '')
-                               LIKE CONCAT('%', #{findWord}, '%') AND t_file.file_name LIKE '%.txt'
-                               GROUP BY file_id)
-        </if>
-        ORDER BY tFile.date DESC,tFile.file_id ASC,tFile.serial_number ASC
-        </select>
+      <!-- ファイルの検索 -->
+      <resultMap type="fms.dto.FileDto" id="fileDtoList">
+          <id column="file_id" property="fileId" />
+          <result column="serial_number" property="serialNumber" />
+          <result column="title" property="title" />
+          <result column="date" property="date" />
+          <result column="version" property="version" />
+          <collection property="mUserList"
+              ofType="fms.entity.MUser">
+              <result column="user_name" property="userName" />
+              <result column="post_id" property="postId" />
+          </collection>
+          <collection property="tFileList"
+              ofType="fms.entity.TFile">
+              <result column="file_Name" property="fileName" />
+          </collection>
+      </resultMap>
+      <select id="getFileDtoList" resultMap="fileDtoList">
+          SELECT tFile.file_id,
+                 tFile.serial_number,
+                 mUser.user_name,
+                 mUser.post_id,
+                 tFile.title,
+                 tFile.date,
+                 tFile.file_name,
+                 tFile.version
+          FROM t_file tFile
+              LEFT OUTER JOIN t_join_user tJoinUser ON tFile.file_id = tJoinUser.file_id
+              LEFT OUTER JOIN m_user mUser ON tJoinUser.user_id = mUser.user_id
+          WHERE tFile.delete_flg = #{deleteFlg}
+      <if test="title != ''">
+          AND tFile.file_id IN (SELECT file_id
+                                FROM t_file
+                                WHERE title LIKE CONCAT('%', #{title}, '%')
+                                GROUP BY file_id)
+      </if>
+      <if test="fileName != ''">
+          AND tFile.file_id IN (SELECT file_id
+                                FROM t_file
+                                WHERE file_name LIKE CONCAT('%', #{fileName}, '%')
+                                GROUP BY file_id)
+      </if>
+      <if test="dateFrom != '' and dateTo == ''">
+          AND tFile.date >= #{dateFrom}
+      </if>
+      <if test="dateFrom == '' and dateTo != ''">
+          AND #{dateTo} >= tFile.date
+      </if>
+      <if test="dateFrom != '' and dateTo != ''">
+          AND tFile.date BETWEEN #{dateFrom} AND #{dateTo}
+      </if>
+      <if test="userId">
+          AND tFile.file_id IN (SELECT file_id
+                                FROM t_join_user
+                                WHERE user_id = #{userId}
+                                GROUP BY file_id)
+      </if>
+      <if test="findWord != ''">
+          AND tFile.file_id IN (SELECT file_id
+                                FROM t_file
+                                WHERE delete_flg = #{deleteFlg}
+                                AND REPLACE(REPLACE(convert_from(t_file.file, 'UTF8'), E'\r', ''), E'\n', '')
+                                LIKE CONCAT('%', #{findWord}, '%') AND t_file.file_name LIKE '%.txt'
+                                GROUP BY file_id)
+      </if>
+      ORDER BY tFile.date DESC,tFile.file_id ASC,tFile.serial_number ASC
+      </select>
 
-        <!-- ファイル情報の更新 -->
-        <update id="updateDeleteTFile">
-        UPDATE t_file
-        SET delete_flg = #{deleteFlg},
-            last_modified_date = #{lastModifiedDate},
-            last_modified_user = #{lastModifiedUser},
-            version = #{version} + 1
-        WHERE file_id = #{fileId}
-            AND version = #{version}
-            AND delete_flg != #{deleteFlg}
-        </update>
+      <!-- ファイル情報の更新 -->
+      <update id="updateDeleteTFile">
+      UPDATE t_file
+      SET delete_flg = #{deleteFlg},
+          last_modified_date = #{lastModifiedDate},
+          last_modified_user = #{lastModifiedUser},
+          version = #{version} + 1
+      WHERE file_id = #{fileId}
+          AND version = #{version}
+          AND delete_flg != #{deleteFlg}
+      </update>
 
-        <!-- ファイル情報の登録 -->
-        <insert id="insertTFile" parameterType="fms.entity.TFile"
-            useGeneratedKeys="true" keyProperty="fileId">
-        INSERT INTO t_file(
-            <if test="fileId != null">
-            File_id,
-            </if>
-            serial_number,
-            file,
-            file_name,
-            title,
-            date,
-            delete_flg,
-            first_create_date,
-            last_modified_date,
-            last_modified_user
-        )
-        VALUES(
-            <if test="fileId != null">
-            #{fileId},
-            </if>
-            #{serialNumber},
-            #{file, typeHandler=fms.handler.FileTypeHandler},
-            #{fileName},
-            #{title},
-            #{date},
-            #{deleteFlg},
-            #{firstCreateDate},
-            #{lastModifiedDate},
-            #{lastModifiedUser}
-        )
-        </insert>
+      <!-- シーケンスの次の値を取得するSQL -->
+      <select id="getFileSequence" resultType="int">
+          SELECT nextval('t_file_file_id_seq')
+      </select>
 
-        <!-- 更新対象のファイルを取得 -->
-        <resultMap type="fms.dto.FileDto" id="fileDto">
-            <id column="file_id" property="fileId" />
-            <result column="serial_number" property="serialNumber" />
-            <result column="title" property="title" />
-            <result column="date" property="date" />
-            <result column="version" property="version" />
-            <collection property="mUserList"
-                ofType="fms.entity.MUser">
-                <result column="user_name" property="userName" />
-                <result column="user_id" property="userId" />
-            </collection>
-            <collection property="tFileList"
-                ofType="fms.entity.TFile">
-                <result column="file_Name" property="fileName" />
-            </collection>
-        </resultMap>
-        <select id="getFileDto" resultMap="fileDto">
-        SELECT tFile.file_id,
-               tFile.serial_number,
-               mUser.user_name,
-               mUser.user_id,
-               tFile.title,
-               tFile.date,
-               tFile.file_name,
-               tFile.version
-        FROM t_file tFile
-            LEFT OUTER JOIN t_join_user tJoinUser ON tFile.file_id = tJoinUser.file_id
-            LEFT OUTER JOIN m_user mUser ON tJoinUser.user_id = mUser.user_id
-        WHERE tFile.file_id = #{fileId}
-              AND tFile.delete_flg = #{deleteFlg}
-        </select>
+      <!-- ファイル情報の登録 -->
+      <insert id="insertTFiles" parameterType="java.util.List">
+          INSERT INTO t_file (
+              file_id,
+              serial_number,
+              file,
+              file_name,
+              title,
+              date,
+              delete_flg,
+              first_create_date,
+              last_modified_date,
+              last_modified_user
+          )
+          VALUES
+          <foreach collection="fileList" item="item" separator=",">
+              (
+              #{item.fileId},
+              #{item.serialNumber},
+              #{item.file},
+              #{item.fileName},
+              #{item.title},
+              #{item.date},
+              #{item.deleteFlg},
+              #{item.firstCreateDate},
+              #{item.lastModifiedDate},
+              #{item.lastModifiedUser}
+              )
+          </foreach>
+      </insert>
 
-        <!-- 登録済みファイル名の取得 -->
-        <resultMap type="String" id="getFileNameList">
-            <result column="file_Name" property="fileName" />
-        </resultMap>
-        <select id="getFileNameList" resultMap="getFileNameList">
-        SELECT tFile.file_name
-        FROM t_file tFile
-        WHERE tFile.delete_flg = #{deleteFlg}
-        <if test="fileId != null">
-            AND tFile.file_id != #{fileId}
-        </if>
-        </select>
+      <!-- 更新対象のファイルを取得 -->
+      <resultMap type="fms.dto.FileDto" id="fileDto">
+          <id column="file_id" property="fileId" />
+          <result column="serial_number" property="serialNumber" />
+          <result column="title" property="title" />
+          <result column="date" property="date" />
+          <result column="version" property="version" />
+          <collection property="mUserList"
+              ofType="fms.entity.MUser">
+              <result column="user_name" property="userName" />
+              <result column="user_id" property="userId" />
+              <result column="post_id" property="postId" />
+          </collection>
+          <collection property="tFileList"
+              ofType="fms.entity.TFile">
+              <result column="file_Name" property="fileName" />
+          </collection>
+      </resultMap>
+      <select id="getFileDto" resultMap="fileDto">
+      SELECT tFile.file_id,
+             tFile.serial_number,
+             mUser.user_name,
+             mUser.user_id,
+             mUser.post_id,
+             tFile.title,
+             tFile.date,
+             tFile.file_name,
+             tFile.version
+      FROM t_file tFile
+          LEFT OUTER JOIN t_join_user tJoinUser ON tFile.file_id = tJoinUser.file_id
+          LEFT OUTER JOIN m_user mUser ON tJoinUser.user_id = mUser.user_id
+      WHERE tFile.file_id = #{fileId}
+            AND tFile.delete_flg = #{deleteFlg}
+      </select>
 
-       <!-- ファイルの更新処理 -->
-        <update id="updateTFile">
-        UPDATE t_file
-        SET title = #{title},
-            date = #{date},
-            file_name = #{fileName},
-            last_modified_date = #{lastModifiedDate},
-            last_modified_user = #{lastModifiedUser},
-            version = #{version} + 1
-        WHERE file_id = #{fileId}
-            AND serial_number = #{serialNumber}
-            AND version = #{version}
-        </update>
+      <!-- 登録済みファイル名の取得 -->
+      <resultMap type="String" id="getFileNameList">
+          <result column="file_Name" property="fileName" />
+      </resultMap>
+      <select id="getFileNameList" resultMap="getFileNameList">
+          SELECT tFile.file_name
+          FROM t_file tFile
+          WHERE tFile.delete_flg = #{deleteFlg}
+      <if test="fileId != null">
+          AND tFile.file_id != #{fileId}
+      </if>
+      </select>
 
-        <!-- 参加者情報の全削除 -->
-        <delete id="deleteTJoinUser">
-        DELETE FROM t_join_user
-        WHERE file_id = #{fileId}
-        </delete>
+      <!-- ファイルの更新処理 -->
+      <update id="updateTFiles">
+          <foreach collection="list" item="tFile" separator=";">
+              UPDATE t_file
+              SET
+                  title = #{tFile.title},
+                  date = #{tFile.date},
+                  file_name = #{tFile.fileName},
+                  last_modified_date = #{tFile.lastModifiedDate},
+                  last_modified_user = #{tFile.lastModifiedUser},
+                  version = #{tFile.version} + 1
+              WHERE file_id = #{tFile.fileId}
+                  AND serial_number = #{tFile.serialNumber}
+                  AND version = #{tFile.version}
+          </foreach>
+      </update>
 
-        <!-- 参加者情報の登録 -->
-        <insert id="insertTJoinUser">
-        INSERT INTO t_join_user(
-            file_id,
-            user_id,
-            serial_number,
-            first_create_date,
-            last_modified_date,
-            last_modified_user
-        )
-        VALUES(
-            #{fileId},
-            #{userId},
-            1,
-            #{firstCreateDate},
-            #{lastModifiedDate},
-            #{lastModifiedUser}
-        )
-        </insert>
+      <!-- 参加者情報の全削除 -->
+      <delete id="deleteTJoinUser">
+          DELETE FROM t_join_user
+          WHERE file_id = #{fileId}
+      </delete>
+
+      <!-- 参加者情報の登録 -->
+      <insert id="insertTJoinUsers">
+          INSERT INTO t_join_user (
+              file_id,
+              serial_number,
+              user_id,
+              first_create_date,
+              last_modified_date,
+              last_modified_user
+          )
+          VALUES
+          <foreach collection="fileList" item="tFile" separator=",">
+              (
+                  #{tFile.fileId},
+                  1,
+                  #{tFile.userId},
+                  #{tFile.firstCreateDate},
+                  #{tFile.lastModifiedDate},
+                  #{tFile.lastModifiedUser}
+              )
+          </foreach>
+      </insert>
+
+      <!-- 参加者情報の取得 -->
+      <resultMap type="fms.entity.MUser" id="mUser">
+          <id column="user_id" property="userId" />
+          <result column="user_name" property="userName" />
+          <result column="post_id" property="postId" />
+      </resultMap>
+      <select id="getTJoinUser" resultMap="mUser">
+      SELECT mUser.user_id,
+             mUser.user_name,
+             mUser.post_id
+      FROM t_file tFile
+          LEFT OUTER JOIN t_join_user tJoinUser ON tFile.file_id = tJoinUser.file_id
+          LEFT OUTER JOIN m_user mUser ON tJoinUser.user_id = mUser.user_id
+      WHERE tFile.file_id = #{fileId}
+            AND tFile.delete_flg = #{deleteFlg}
+      GROUP BY mUser.user_id
+      </select>
 </mapper>

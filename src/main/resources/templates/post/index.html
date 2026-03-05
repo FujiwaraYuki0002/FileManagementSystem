@@ -83,8 +83,13 @@ th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
 
     <!--/*エラーダイアログ */-->
     <div id="errorAlert" th:object="${postForm}">
+        <span th:if="${completeMessage} != null"
+                      th:text="${completeMessage}"
+                      class="errorMessage"
+                      style="color: #003366;"></span>
        <div th:each="error:${#fields.detailedErrors()}">
-            <span th:text="${error.message}" class="errorMessage"></span>
+            <span th:text="${error.message}"
+                  class="errorMessage"></span>
        </div>
        <button id="okButton" onclick="closeAlert('')">OK</button>
      </div>

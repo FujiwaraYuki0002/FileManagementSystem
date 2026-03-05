@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import fms.domain.LogDomain;
 import fms.entity.MUser;
 import fms.entity.TLog;
+import fms.form.FileForm;
 import fms.mapper.TLogMapper;
 
 /**
@@ -155,5 +156,30 @@ public class DateUtil {
             e.printStackTrace();
         }
         return dateString;
+    }
+
+    /**
+     * フォームの日時表記の修正
+     *
+     * @author 髙橋 真澄
+     *
+     * @param fileForm
+     */
+    public void formDateSet(FileForm fileForm) {
+
+        // 日付が入力されているか
+        if (!fileForm.getDateFrom().isEmpty()) {
+
+            // 不正ならばform内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
+            fileForm.setDateFrom(noHyphenDate(fileForm.getDateFrom()));
+
+        }
+
+        // 日付が入力されているか
+        if (!fileForm.getDateTo().isEmpty()) {
+
+            // 不正ならばform内の値を"yyyy-MM-dd"から"yyyyMMdd"に変換
+            fileForm.setDateTo(noHyphenDate(fileForm.getDateTo()));
+        }
     }
 }

@@ -299,7 +299,7 @@ label.input_label input[type="checkbox"] {
     /*  左側に少し余白を追加して見た目を整える  */
     padding-left: 30px;
     white-space: nowrap;
-    list-style:none;
+    list-style: none;
     padding-left: 0;
 }
 
@@ -380,7 +380,7 @@ label.input_label input[type="checkbox"] {
 #selectedList {
     margin: 2px;
     padding-left: 0;
-    list-style:none;
+    list-style: none;
 }
 
 #selectedList li {
@@ -497,6 +497,42 @@ label.input_label input[type="checkbox"] {
     background-color: #1579c0;
 }
 
+/* ファイルアップロード関連 */
+label.file_label {
+    align-items: center;
+    width: auto;
+    margin: 0;
+    padding: 10px 60px;
+    color: #ffffff;
+    border-radius: 5px;
+    background-color: #2589d0;
+    cursor: pointer;
+}
+
+label.file_label:hover {
+    background-color: #1579c0;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+/* マイナスボタン */
+.minus {
+    padding: 2px 7px 0 7px;
+    border: none;
+    background-color: red;
+    color: #FFFFFF;
+    font-weight: bold;
+    border-radius: 50%;
+    /* 角丸 */
+}
+
+.file_select a {
+    margin: 0;
+    color: #003366;
+}
+
 /* 読み込み中 */
 #loadAlert {
     display: none;
@@ -538,4 +574,29 @@ label.input_label input[type="checkbox"] {
 /* 注意書き */
 span.attention {
     color: red;
+}
+
+/* 選択中ファイルの名前表示 */
+.fileNameText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* 親要素の幅に合わせる */
+    width: 100%;
+}
+
+.fileName {
+    /* 改行させないようにする*/
+    white-space: nowrap;
+    /* 要素をブロックにする */
+    display: block;
+    /* 幅を指定 */
+    width: 300px;
+    /* はみ出たテキストを隠す */
+    overflow: hidden;
+    /* 省略記号を表示 */
+    text-overflow: ellipsis;
+}
+
+.fileName:hover {
+    color: #003366;
 }

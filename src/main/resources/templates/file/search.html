@@ -11,10 +11,6 @@
     <!--/* メイン */-->
     <div class="container">
 
-        <!--/* 完了メッセージ */-->
-        <!--/* th:includeはspring3.1で削除予定なのでth:insertに変更 by藤田 誠也 */-->
-        <div th:insert="~{/common/completeMessage}"></div>
-
         <div class="title">
             <h1 th:if="${search != null}">ファイル検索</h1>
             <h1 th:if="${index != null}">ファイル管理</h1>
@@ -289,8 +285,16 @@
         <div th:if = "${bindingResult != null}">
                     <span th:each="error : ${bindingResult.fieldErrors}"
                           th:text="${error.defaultMessage}"
-                          class = "errorMessage"></span>
+                          class = "errorMessage">
+                    </span>
                 </div>
+
+                <!--/* 完了メッセージ */-->
+                <span th:if="${completeMessage} != null"
+                      th:text="${completeMessage}"
+                      class="errorMessage"
+                      style="color: #003366;"></span>
+
                 <!-- dateFromのエラーメッセージ -->
                 <div th:if="${#fields.hasErrors('dateFrom')}">
                     <span th:errors="*{dateFrom}" class="errorMessage"></span>
@@ -300,7 +304,6 @@
                 <div th:if="${#fields.hasErrors('title')}">
                     <span th:errors="*{title}" class="errorMessage"></span>
                 </div>
-
 
                 <!-- fileNameのエラーメッセージ -->
                 <div th:if="${#fields.hasErrors('fileName')}">
@@ -312,9 +315,9 @@
                     <span th:errors="*{findWord}" class="errorMessage"></span>
                 </div>
 
-                <!-- 検索欄未入力のエラーメッセージ(fileIdで代用) -->
-                <div th:if="${#fields.hasErrors('fileId')}">
-                    <span th:errors="*{fileId}" class="errorMessage"></span>
+                <!-- 検索欄未入力のエラーメッセージ -->
+                <div th:if="${#fields.hasErrors('searchConditions')}">
+                    <span th:errors="*{searchConditions}" class="errorMessage"></span>
                 </div>
 
                 <!-- 検索結果0件のエラーメッセージ(versionで代用) -->
@@ -399,10 +402,11 @@
             var formData = new FormData();
 
             // sendBeaconを使用してリクエスト送信（POST）
-            //本番環境
-            //navigator.sendBeacon("/file_management_system/file/saveFileDelete", formData);
-            //ローカル環境
-            navigator.sendBeacon("/file/saveFileDelete", formData);
+            // ローカル用
+            //navigator.sendBeacon("/file/saveFileDelete", formData);
+
+            // 本番用
+            navigator.sendBeacon("/file_management_system/file/saveFileDelete", formData);
         });
 
         const fileList = /*[[${fileList}]]*/[];  // サーバーサイドから渡されたユーザーデータ

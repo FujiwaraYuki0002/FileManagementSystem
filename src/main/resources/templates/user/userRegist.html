@@ -126,6 +126,8 @@
 
         <!-- エラーダイアログ -->
         <div id="errorAlert" th:object="${userForm}">
+            <span th:if="${completeMessage} != null" th:text="${completeMessage}" class="errorMessage"
+                style="color: #003366;"></span>
             <!-- userIdのエラーメッセージ -->
             <div th:if="${#fields.hasErrors('userId')}">
                 <span th:errors="*{userId}" class="errorMessage"></span>

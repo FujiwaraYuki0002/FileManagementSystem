@@ -22,12 +22,12 @@ public class PasswordForm {
     private String password;
 
     /** 新しいパスワード */
-    @Pattern(regexp = "^(?=(.*[a-z]))(?=(.*[A-Z]))(?=(.*\\d))(?=(.*[!\"#$%&'()*+,-./:;<=>?@\\^_`{|}~])).{10,20}$", message = "{ERROR0017}")
+    @Pattern(regexp = "^(?=(.*[a-z]))(?=(.*[A-Z]))(?=(.*\\d))(?=(.*[!\"#$%&'()*+,-./:;<=>?@\\^_`{|}~])).{10,20}$", message = "{ERROR0016}")
     @NotBlank(message = "{ERROR0001}")
     private String newPassword;
 
     /** 確認用パスワード */
-    @Pattern(regexp = "^(?=(.*[a-z]))(?=(.*[A-Z]))(?=(.*\\d))(?=(.*[!\"#$%&'()*+,-./:;<=>?@\\^_`{|}~])).{10,20}$", message = "{ERROR0017}")
+    @Pattern(regexp = "^(?=(.*[a-z]))(?=(.*[A-Z]))(?=(.*\\d))(?=(.*[!\"#$%&'()*+,-./:;<=>?@\\^_`{|}~])).{10,20}$", message = "{ERROR0016}")
     @NotBlank(message = "{ERROR0001}")
     private String checkPassword;
 

@@ -7,6 +7,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -157,12 +158,15 @@ public class UserService {
      *
      * @param userForm ユーザーフォーム
      */
+    @Transactional
     public void mUserUpdate(UserForm userForm) {
 
         // ユーザーマスタ更新
         MUser mUser = new MUser();
+        // バージョン取得
         Integer version = mUserMapper.getVersion(userForm.getUserId());
 
+        // ユーザーエンティティに値をセット
         mUser.setUserId(userForm.getUserId());
         mUser.setPostId(userForm.getPostId());
         mUser.setUserName(userForm.getUserName());
@@ -196,16 +200,29 @@ public class UserService {
         // userに登録されている所属情報を全件削除
         mUserTeamMapper.deleteMUserTeam(userForm.getUserId(), mUserTeamList);
 
+        // 新しく登録するMUserTeamオブジェクトのリスト
+        List<MUserTeam> userTeamToInsert = new ArrayList<>();
+
         // 選択された所属情報を所属管理DBに登録
         for (Integer teamId : teamIds) { // 拡張for文を使用
 
+            // 所属管理エンティティに値をセット
             MUserTeam mUserTeam = new MUserTeam();
             mUserTeam.setUserId(userForm.getUserId());
             mUserTeam.setTeamId(teamId); // teamIdをセット
             mUserTeam.setFirstCreateDate(dateUtil.getToday());
             mUserTeam.setLastModifiedDate(dateUtil.getToday());
             mUserTeam.setLastModifiedUser(mUser.getUserId());
-            mUserTeamMapper.insertMUserTeam(mUserTeam);
+
+            // リストに追加
+            userTeamToInsert.add(mUserTeam);
+
+        }
+
+        if (!userTeamToInsert.isEmpty()) {
+
+            mUserTeamMapper.insertMUserTeams(userTeamToInsert);
+
         }
     }
 
@@ -216,16 +233,19 @@ public class UserService {
      *
      * @param userForm ユーザーフォーム
      */
+    @Transactional
     public void mUserInsert(UserForm userForm) {
 
         // ユーザーマスタ登録
         MUser mUser = new MUser();
+        // 所属IDをリストで取得
         Integer[] teamIds = userForm.getTeamId();
 
         //パスワードをハッシュ化
         BCryptPasswordEncoder bcpe = new BCryptPasswordEncoder();
         String encodeedPassword = bcpe.encode(userForm.getNewPassword());
 
+        // ユーザーエンティティに値をセット
         mUser.setUserId(userForm.getUserId());
         mUser.setPostId(userForm.getPostId());
         mUser.setUserName(userForm.getUserName());
@@ -239,16 +259,27 @@ public class UserService {
 
         mUserMapper.insertMUser(mUser);
 
+        // 新しく登録するMUserTeamオブジェクトのリスト
+        List<MUserTeam> userTeamToInsert = new ArrayList<>();
+
         for (Integer teamId : teamIds) {
             // 所属管理登録
             MUserTeam mUserTeam = new MUserTeam();
+
+            // 所属管理エンティティに値をセット
             mUserTeam.setUserId(userForm.getUserId());
             mUserTeam.setTeamId(teamId);
             mUserTeam.setFirstCreateDate(dateUtil.getToday());
             mUserTeam.setLastModifiedDate(dateUtil.getToday());
             mUserTeam.setLastModifiedUser(mUser.getUserId());
 
-            mUserTeamMapper.insertMUserTeam(mUserTeam);
+            // リストに追加
+            userTeamToInsert.add(mUserTeam);
+        }
+
+        if (!userTeamToInsert.isEmpty()) {
+
+            mUserTeamMapper.insertMUserTeams(userTeamToInsert);
         }
     }
 

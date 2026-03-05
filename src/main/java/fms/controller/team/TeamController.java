@@ -73,8 +73,9 @@ public class TeamController {
         logUtil.addLog(LogDomain.CODE_LOG_SECTION_OPE, "所属管理", "TEAM_INDEX",
                 mUser.getUserId(), Thread.currentThread().getStackTrace()[1].getClassName());
 
-        // ☆更新の戻るボタンからの遷移
+        // 更新の戻るボタンからの遷移
         Integer teamId = (Integer) httpSession.getAttribute("teamId");
+
         teamForm.setTeamId(teamId);
 
         // 所属リストを取得
@@ -82,6 +83,7 @@ public class TeamController {
 
         model.addAttribute("mTeamList", mTeamList);
 
+        // 所属管理画面へ遷移
         return "team/index";
     }
 
@@ -118,6 +120,7 @@ public class TeamController {
 
             model.addAttribute("mTeamList", mTeamList);
 
+            // 所属管理画面へ遷移
             return "team/index";
         }
 
@@ -132,6 +135,7 @@ public class TeamController {
 
             model.addAttribute("mTeamList", mTeamList);
 
+            // 所属管理画面へ遷移
             return "team/index";
         }
 
@@ -142,11 +146,19 @@ public class TeamController {
         String message = messageSource.getMessage(MessageDomain.PROP_KEY_MESSAGE0003, new String[] { "所属" },
                 Locale.JAPAN);
 
-        redirectAttributes.addFlashAttribute("completeMessage", message);
+        model.addAttribute("completeMessage", message);
+
+        // 所属リスト取得
+        List<MTeam> mTeamList = teamService.getMTeamList();
+
+        model.addAttribute("mTeamList", mTeamList);
+
+        model.addAttribute("insert", true); // 更新フラグ
 
         // 元のページ番号をリダイレクトで渡す
-        redirectAttributes.addFlashAttribute("page", page);
+        model.addAttribute("page", page);
 
-        return "redirect:/team/index";
+        // 所属管理画面へ遷移
+        return "team/index";
     }
 }

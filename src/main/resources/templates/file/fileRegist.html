@@ -16,10 +16,6 @@
           enctype        = "multipart/form-data"
           th:object      = "${fileInputForm}">
         <div class = "container">
-            <!--完了メッセージ-->
-            <th:if>
-                <div class="non_compelete-message"></div>
-            </th:if>
 
             <div class="title">
                 <h1 th:if="${insert != null}">ファイル登録</h1>
@@ -43,7 +39,6 @@
                                     placeholder    = "全角文字100文字以内で入力してください"
                                     id             = "title"
                                     th:value       = "${fileInputForm.title}"
-                                    required validate[required]
                                     th:disabled="${exclusiveControl != null && exclusiveControl}"
                                     th:classappend = "${#fields.hasErrors('title') ? 'errorTextbox' : ''}">
                                 <input type        = "date"
@@ -53,7 +48,6 @@
                                     th:value       = "${fileInputForm.meetingDate != null && fileInputForm.meetingDate != '' ?
                                         T(java.time.LocalDate).parse(fileInputForm.meetingDate,T(java.time.format.DateTimeFormatter).
                                         ofPattern('yyyyMMdd')).format(T(java.time.format.DateTimeFormatter).ofPattern('yyyy-MM-dd')) : ''}"
-                                    required validate[required]
                                     th:disabled="${exclusiveControl != null && exclusiveControl}"
                                     th:classappend = "${#fields.hasErrors('meetingDate') ? 'errorTextbox' : ''}">
                                 <input type="button"
@@ -159,50 +153,62 @@
                             </div>
                             <div class="right_textbox">
                                 <span class="file_select">
-                                        <label class = "file_label">
-                                            <input type = "file"
-                                                   name = "file"
-                                                   id   = "file1"
-                                                   accept = ".mp3,.txt,.docx,.xlsx"
-                                                   class  = "eitherCheck">ファイルを選択
-                                        </label>
-                                        <input type  = "button"
-                                               class = "minus"
-                                               id    = "delete_file1"
-                                               value = "－"><br>
-                                    <a id = "file_name1">選択されていません</a>
+                                    <label class = "file_label">
+                                        <input type = "file"
+                                               name = "file"
+                                               id   = "file1"
+                                               accept = ".mp3,.txt,.docx,.xlsx"
+                                               class  = "eitherCheck">ファイルを選択
+                                    </label>
+                                    <input type  = "button"
+                                           class = "minus"
+                                           id    = "delete_file1"
+                                           value = "－"><br>
+                                    <a class="fileName tooltip"
+                                       title="選択されていません"
+                                       id = "file_name1">
+                                            選択されていません
+                                    </a>
                                 </span>
                                 <span class = "file_select">
-                                        <label class = "file_label">
-                                            <input type   = "file"
-                                                   name   = "file"
-                                                   id     = "file2"
-                                                   accept = ".mp3,.txt,.docx,.xlsx"
-                                                   class  = "eitherCheck">ファイルを選択
-                                        </label>
-                                        <input type  = "button"
-                                               class = "minus"
-                                               id    = "delete_file2"
-                                               value = "－"><br>
-                                    <a id="file_name2">選択されていません</a>
+                                    <label class = "file_label">
+                                        <input type = "file"
+                                               name = "file"
+                                               id   = "file2"
+                                               accept = ".mp3,.txt,.docx,.xlsx"
+                                               class  = "eitherCheck">ファイルを選択
+                                    </label>
+                                    <input type  = "button"
+                                           class = "minus"
+                                           id    = "delete_file2"
+                                           value = "－"><br>
+                                    <a class="fileName tooltip"
+                                       title="選択されていません"
+                                       id = "file_name2">
+                                            選択されていません
+                                    </a>
                                 </span>
-                                <span class="file_select">
-                                        <label class="file_label">
-                                            <input type   = "file"
-                                                   name   = "file"
-                                                   id     = "file3"
-                                                   accept = ".mp3,.txt,.docx,.xlsx"
-                                                   class  = "eitherCheck">ファイルを選択
-                                        </label>
-                                        <input type  = "button"
-                                               class = "minus"
-                                               id    ="delete_file3"
-                                               value = "－"><br>
-                                    <a id="file_name3">選択されていません</a>
+                                <span class = "file_select">
+                                    <label class = "file_label">
+                                        <input type = "file"
+                                               name = "file"
+                                               id   = "file3"
+                                               accept = ".mp3,.txt,.docx,.xlsx"
+                                               class  = "eitherCheck">ファイルを選択
+                                    </label>
+                                    <input type  = "button"
+                                           class = "minus"
+                                           id    = "delete_file3"
+                                           value = "－"><br>
+                                    <a class="fileName tooltip"
+                                       title="選択されていません"
+                                       id = "file_name3">
+                                            選択されていません
+                                    </a>
                                 </span>
                                 <span class="file_select insert_text attention">
-                                    ※アップロード可能なファイルは合計100MB以下です
-                                    .mp3のファイルは1つのみ登録可能です
+                                    ※アップロード可能なファイルは合計400MB以下です<br>
+                                    .mp3のファイルは1つのみ登録可能です<br>
                                     ファイル名は100文字以内にしてください
                                 </span>
                             </div>
@@ -224,7 +230,6 @@
                                         name           = "noExtensionFileName"
                                         th:id          = "'file' + ${status.count}"
                                         th:value       = "${fileItem.fileName.substring(0, fileItem.fileName.lastIndexOf('.'))}"
-                                        required validate[required]
                                         placeholder    ="100文字以内で入力してください"
                                         th:disabled="${exclusiveControl != null && exclusiveControl}"
                                         th:classappend = "${#fields.hasErrors('fileName') ? 'errorTextbox' : ''}">
@@ -246,6 +251,12 @@
 
         <!-- エラーダイアログ -->
         <div id="errorAlert" th:object="${fileInputForm}">
+
+            <span th:if="${completeMessage} != null"
+                  th:text="${completeMessage}"
+                  class="errorMessage"
+                  style="color: #003366;">
+            </span>
 
             <!-- titleのエラーメッセージ -->
             <div th:if="${#fields.hasErrors('title')}">
@@ -603,7 +614,7 @@
                 const totalSizeInMB = (totalSize / (1024 * 1024)).toFixed(2); // MBに変換して小数点2桁に
 
                 // アップロード上限値
-                const maxSizeInBytes = 500;
+                const maxSizeInBytes = 400;
 
                 if(totalSizeInMB > maxSizeInBytes){
                     idTotalSizeOver = true;
@@ -638,9 +649,11 @@
                 if (file == null) {
                     $(fileIdName).text("選択されていません");
                     $(fileIdValue).val("");
+                    $(fileIdName).attr('title', "選択されていません");
                 } else {
                     $(fileIdName).text(file.name);
                     $(fileIdValue).val(file.name);
+                    $(fileIdName).attr('title', file.name);
                 }
             }
 
@@ -682,16 +695,19 @@
                 $("#file1").val("");
                 $("#file_name1").text("選択されていません");
                 $("#fileName1").val("");
+                $("#file_name1").attr('title', "選択されていません");
             });
             $("#delete_file2").on('click', function () {
                 $("#file2").val("");
                 $("#file_name2").text("選択されていません");
                 $("#fileName2").val("");
+                $("#file_name2").attr('title', "選択されていません");
             });
             $("#delete_file3").on('click', function () {
                 $("#file3").val("");
                 $("#file_name3").text("選択されていません");
                 $("#fileName3").val("");
+                $("#file_name3").attr('title', "選択されていません");
             });
          }
 

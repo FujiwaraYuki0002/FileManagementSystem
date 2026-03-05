@@ -10,27 +10,18 @@
                 <span></span>
                 <span></span>
             </div>
-            <th:block th:if="${session.loginUser.role} == 1">
                 <div class="nav-container">
-                    <h2>メニュー</h3>
+                    <h2>メニュー</h2>
                     <a th:href="@{/menu/file/search}">ファイル検索</a>
                     <a th:href="@{/menu/file/index}">ファイル管理</a>
-                    <a th:href="@{/menu/team/index}">所属管理</a>
-                    <a th:href="@{/menu/post/index}">役職管理</a>
-                    <a th:href="@{/menu/user/index}">ユーザー管理</a>
+                        <th:block th:if="${session.loginUser.role} == 1">
+                            <a th:href="@{/menu/team/index}">所属管理</a>
+                            <a th:href="@{/menu/post/index}">役職管理</a>
+                            <a th:href="@{/menu/user/index}">ユーザー管理</a>
+                        </th:block>
                     <a th:href="@{/menu/password/changePassword}">パスワード変更</a>
                     <a th:href="@{/}">ログアウト</a>
                 </div>
-            </th:block>
-            <th:block th:if="${session.loginUser.role} == 2">
-                <div class="nav-container">
-                     <h1>メニュー</h1>
-                     <a th:href="@{/menu/file/search}">ファイル検索</a>
-                     <a th:href="@{/menu/file/index}">ファイル管理</a>
-                     <a th:href="@{/menu/password/changePassword}">パスワード変更</a>
-                  <a th:href="@{/}">ログアウト</a>
-                 </div>
-           </th:block>
         </div>
     </div>
 </div>

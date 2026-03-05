@@ -55,4 +55,7 @@ public class FileForm {
     //更新の排他ロック確認用
     /** 画面ID */
     private String screenId;
+
+    // 検索条件未入力時のエラーメッセージ用
+    private String searchConditions;
 }
