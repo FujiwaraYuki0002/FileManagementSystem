@@ -12,7 +12,7 @@ import lombok.Data;
 @Data
 public class UserForm {
 
-    @Pattern(regexp = "^$|^(?=.*\\d)[a-zA-Z0-9._@\\-]{8,20}$", message = "{ERROR0005}")
+    @Pattern(regexp = "^$|^(?=.*\\d)[a-zA-Z0-9!\"#$%&'()*+,-./:;<=>?@\\^_`{|}~]{8,20}$", message = "{ERROR0005}")
     /** ユーザID */
     private String userId;
 

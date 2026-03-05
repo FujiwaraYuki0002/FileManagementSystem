@@ -57,7 +57,7 @@
                                     th:classappend="${#fields.hasErrors('checkPassword') ? 'errorTextbox' : ''}"
                                     th:disabled="${exclusiveControl != null && exclusiveControl}"
                                     th:placeholder="${update != null ? '変更しない場合入力しないでください' : ''}">
-                                <span class="attention" th:if="${insert != null}">*ユーザーIDは数字を含む半角英文字、記号(._@-)で8～20文字にしてください。
+                                <span class="attention" th:if="${insert != null}">*ユーザーIDは数字を含む半角英文字、記号で8～20文字にしてください。
                                 </span>
                                 <span class="attention">*パスワードは英文字(大文字、小文字)、数字、記号を全て含む10文字～20文字にしてください。
                                 </span>
