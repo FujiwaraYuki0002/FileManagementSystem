@@ -28,6 +28,12 @@ public class TFile extends BaseEntity {
     /** 日付 */
     private String date;
 
+    /** 時間自 */
+    private String timeTo;
+
+    /** 時間至 */
+    private String timeFrom;
+
     /** 削除フラグ */
     private int deleteFlg;
 

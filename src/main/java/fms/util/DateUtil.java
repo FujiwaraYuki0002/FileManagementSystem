@@ -159,6 +159,33 @@ public class DateUtil {
     }
 
     /**
+     *  文字列hh:mmを文字列hhmmに変換
+     *
+     *  @author 藤田 誠也
+     *
+     *  @param dateString 変換したい文字列
+     *
+     *  @return 変換後の時間
+     */
+    public String noColonTime(String stringTime) {
+        return stringTime.replace(":", "");
+    }
+
+    /**
+     *  文字列hhmmを文字列hh:mmに変換
+     *
+     *  @author 藤田 誠也
+     *
+     *  @param dateString 変換したい文字列
+     *
+     *  @return 変換後の時間
+     */
+    public String ColonTime(String stringTime) {
+        StringBuilder sb = new StringBuilder(stringTime);
+        return sb.insert(2, ":").toString();
+    }
+
+    /**
      * フォームの日時表記の修正
      *
      * @author 髙橋 真澄

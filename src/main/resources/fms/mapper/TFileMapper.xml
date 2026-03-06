@@ -148,6 +148,8 @@
           <result column="serial_number" property="serialNumber" />
           <result column="title" property="title" />
           <result column="date" property="date" />
+          <result column="time_to" property="timeTo" />
+          <result column="time_from" property="timeFrom" />
           <result column="version" property="version" />
           <collection property="mUserList"
               ofType="fms.entity.MUser">
@@ -168,6 +170,8 @@
              mUser.post_id,
              tFile.title,
              tFile.date,
+             tFile.time_to,
+             tFile.time_from,
              tFile.file_name,
              tFile.version
       FROM t_file tFile
@@ -197,6 +201,8 @@
               SET
                   title = #{tFile.title},
                   date = #{tFile.date},
+                  time_from = #{tFile.timeFrom},
+                  time_to = #{tFile.timeTo},
                   file_name = #{tFile.fileName},
                   last_modified_date = #{tFile.lastModifiedDate},
                   last_modified_user = #{tFile.lastModifiedUser},

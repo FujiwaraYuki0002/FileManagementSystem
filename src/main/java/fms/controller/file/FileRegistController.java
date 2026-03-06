@@ -6,10 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.IntStream;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -31,6 +27,9 @@ import fms.service.FileService;
 import fms.service.TExclusiveControlService;
 import fms.util.DateUtil;
 import fms.util.LogUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 
 /**
  * ファイル登録・更新コントローラー
@@ -104,7 +103,6 @@ public class FileRegistController {
 
             // 更新対象の情報を取得
             FileDto file = fileService.getFile(fileInputForm, bindingResult);
-
             // 更新対象のファイルが見つからなかった場合
             if (file == null) {
 
@@ -163,6 +161,10 @@ public class FileRegistController {
             // 題名と会議実施日をフォームに格納
             fileInputForm.setTitle(file.getTitle());
             fileInputForm.setMeetingDate(file.getDate());
+
+            //時間の形式をhhmmからhh:mmに変換し、フォームに格納
+            fileInputForm.setTimeFrom(dateUtil.ColonTime(file.getTimeFrom()));
+            fileInputForm.setTimeTo(dateUtil.ColonTime(file.getTimeTo()));
 
             // ファイル名等はそのままエンティティでスコープに格納
             model.addAttribute("file", file);

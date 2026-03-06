@@ -2,14 +2,15 @@ package fms.form;
 
 import java.util.List;
 
-import jakarta.validation.constraints.Pattern;
-
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
 import fms.annotation.DateFraudCheck;
 import fms.annotation.FileNameDuplicationCheck;
 import fms.annotation.FileNameLengthCheck;
 import fms.annotation.FileSizeCheck;
+import fms.annotation.TimeCorrelationCheck;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 /**
@@ -23,6 +24,7 @@ import lombok.Data;
 @FileNameLengthCheck
 @FileNameDuplicationCheck
 @FileSizeCheck
+@TimeCorrelationCheck
 public class FileInputForm {
 
     /** ファイルID */
@@ -36,6 +38,14 @@ public class FileInputForm {
 
     /** 会議実施日 */
     private String meetingDate;
+
+    /** 時間自 */
+    @DateTimeFormat(pattern = "HH:mm")
+    private String timeTo;
+
+    /** 時間至 */
+    @DateTimeFormat(pattern = "HH:mm")
+    private String timeFrom;
 
     /** 題名 */
     @Pattern(regexp = "^[ａ-ｚＡ-Ｚ０-９一-龯ぁ-んァ-ヶ々々ー]{1,100}$", message = "{ERROR0006}")

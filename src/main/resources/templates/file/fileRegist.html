@@ -53,9 +53,14 @@
                                     th:classappend = "${#fields.hasErrors('meetingDate') ? 'errorTextbox' : ''}">
                                 <div class="input_date">
                                     <input type="time"
+                                        name="timeFrom"
+                                        th:value="${fileInputForm.timeFrom}"
                                         th:disabled="${exclusiveControl != null && exclusiveControl}"
                                     > ～ <input type="time"
-                                        th:disabled="${exclusiveControl != null && exclusiveControl}">
+                                        name="timeTo"
+                                        th:value="${fileInputForm.timeTo}"
+                                        th:disabled="${exclusiveControl != null && exclusiveControl}"
+                                        th:classappend = "${#fields.hasErrors('timeTo') ? 'errorTextbox' : ''}">
                                 </div>
                                 <input type="button"
                                     value="参加者を選択"
@@ -286,7 +291,10 @@
             <div th:if="${#fields.hasErrors('fileName')}">
                 <span th:errors="*{fileName}" class="errorMessage"></span>
             </div>
-
+            <!-- timeToのエラーメッセージ -->
+            <div th:if="${#fields.hasErrors('timeTo')}">
+                <span th:errors="*{timeTo}" class="errorMessage"></span>
+            </div>
             <!-- 排他ロックのエラーメッセージ -->
             <div th:each="error:${#fields.detailedErrors()}" th:if="${exclusiveControl}">
                 <span th:text="${error.message}" class="errorMessage"></span>

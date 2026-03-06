@@ -259,6 +259,8 @@ public class FileService {
                         fileInputForm.getTitle(),
                         fileName,
                         dateUtil.noHyphenDate(fileInputForm.getMeetingDate()),
+                        dateUtil.noColonTime(fileInputForm.getTimeFrom()),
+                        dateUtil.noColonTime(fileInputForm.getTimeTo()),
                         dateUtil.getToday(),
                         dateUtil.getToday(),
                         mUser.getUserId());
@@ -632,6 +634,8 @@ public class FileService {
             tFile.setFileName(fileName);
             tFile.setDate(
                     dateUtil.noHyphenDate(fileInputForm.getMeetingDate()));
+            tFile.setTimeTo(dateUtil.noColonTime(fileInputForm.getTimeTo()));
+            tFile.setTimeFrom(dateUtil.noColonTime(fileInputForm.getTimeFrom()));
             tFile.setLastModifiedDate(dateUtil.getToday());
             tFile.setLastModifiedUser(mUser.getUserId());
             tFile.setVersion(fileInputForm.getVersion());

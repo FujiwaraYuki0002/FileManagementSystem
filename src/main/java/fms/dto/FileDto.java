@@ -24,6 +24,10 @@ public class FileDto {
     private String title;
     /** 日付 */
     private String date;
+    /** 時間自 */
+    private String timeTo;
+    /** 時間至 */
+    private String timeFrom;
     /** ファイルリスト */
     private List<TFile> tFileList;
     /** バージョン */

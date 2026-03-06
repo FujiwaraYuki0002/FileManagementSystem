@@ -53,6 +53,8 @@ public class TFileRepository {
             String fileName,
             String title,
             String data,
+            String timeFrom,
+            String timeTo,
             Date first_create_date,
             Date last_modified_date,
             String last_modified_user)
@@ -64,11 +66,13 @@ public class TFileRepository {
                 + "file_name, "
                 + "title, "
                 + "date,"
+                + "time_from,"
+                + "time_to,"
                 + "delete_flg,"
                 + "first_create_date,"
                 + "last_modified_date,"
                 + "last_modified_user) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql);
@@ -84,10 +88,12 @@ public class TFileRepository {
             ps.setString(4, title);
             ps.setString(5, fileName);
             ps.setString(6, data);
-            ps.setInt(7, 0);
-            ps.setDate(8, first_create_date_sql);
-            ps.setDate(9, last_modified_date_sql);
-            ps.setString(10, last_modified_user);
+            ps.setString(7, timeFrom);
+            ps.setString(8, timeTo);
+            ps.setInt(9, 0);
+            ps.setDate(10, first_create_date_sql);
+            ps.setDate(11, last_modified_date_sql);
+            ps.setString(12, last_modified_user);
 
             // データを挿入
             ps.executeUpdate();
