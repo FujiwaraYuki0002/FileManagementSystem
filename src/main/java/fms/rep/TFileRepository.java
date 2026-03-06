@@ -88,10 +88,10 @@ public class TFileRepository {
             ps.setString(7, timeFrom);
             ps.setString(8, timeTo);
             ps.setInt(9, 0);
-            ps.setDate(10, first_create_date.toInstant()
+            ps.setObject(10, first_create_date.toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime());
-            ps.setDate(11, last_modified_date.toInstant()
+            ps.setObject(11, last_modified_date.toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime());
             ps.setString(12, last_modified_user);
