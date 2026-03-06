@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZoneId;
 import java.util.Date;
 
 import javax.sql.DataSource;
@@ -74,9 +75,6 @@ public class TFileRepository {
                 PreparedStatement ps = conn.prepareStatement(sql);
                 InputStream inputStream = file.getInputStream()) { // ファイルをストリームで取得
 
-            java.sql.Date first_create_date_sql = new java.sql.Date(first_create_date.getTime());
-            java.sql.Date last_modified_date_sql = new java.sql.Date(last_modified_date.getTime());
-
             ps.setInt(1, fileId);
             ps.setInt(2, serialNumber);
             // setBinaryStream を使用
@@ -85,8 +83,12 @@ public class TFileRepository {
             ps.setString(5, fileName);
             ps.setString(6, data);
             ps.setInt(7, 0);
-            ps.setDate(8, first_create_date_sql);
-            ps.setDate(9, last_modified_date_sql);
+            ps.setObject(8, first_create_date.toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime());
+            ps.setObject(9, last_modified_date.toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime());
             ps.setString(10, last_modified_user);
 
             // データを挿入
